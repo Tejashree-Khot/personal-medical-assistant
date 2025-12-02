@@ -1,0 +1,73 @@
+[project]
+name = "personal-medical-assistant"
+version = "0.1.0"
+description = "Personal Medical AI agent assistant"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv.workspace]
+members = [
+    "app"
+]
+
+[tool.uv.sources]
+personal-medical-assistant-fast-api = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "personal-medical-assistant-fast-api",
+    "coverage",
+    "moto",
+    "mypy",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest",
+    "ruff",
+    "streamlit",
+    "types-requests",
+]
+
+[tool.setuptools]
+# for flat layout we need to explicitly list packages
+packages = ["app", "scripts"]
+
+[tool.mypy]
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+exclude = []
+explicit_package_bases = true
+warn_no_return = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+check_untyped_defs = false # keep this setting only for tests folder
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["app"]
+testpaths = ["tests"]
+
+[tool.ruff.format]
+quote-style = "double"
+skip-magic-trailing-comma = true
+indent-style = "space"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+exclude = []
+src = ["app", "script"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false

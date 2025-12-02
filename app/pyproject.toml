@@ -1,0 +1,29 @@
+[project]
+name = "personal-medical-assistant-fast-api"
+version = "0.1.0"
+description = "Fast API for Medical assistant agent"
+requires-python = ">=3.13"
+dependencies = [
+    "asyncpg",
+    "fastapi",
+    "langchain-core",
+    "langchain-groq",
+    "langchain-openai",
+    "langgraph",
+    "langgraph-checkpoint-postgres",
+    "nest-asyncio",
+    "psycopg[binary,pool]",
+    "pydantic-settings",
+    "python-dotenv",
+    "trustcall",
+    "uvicorn"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent", "config", "core", "memory", "service"]
+exclude = ["test"]

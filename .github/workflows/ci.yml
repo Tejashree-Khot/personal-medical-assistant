@@ -1,0 +1,58 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    env:
+      LINT_MODULES: app
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('src/requirements.txt') }}
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          uv --version
+
+      - name: Create venv
+        run: uv venv
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-groups --frozen --active
+
+      - name: Run ruff
+        run: |
+          uv run ruff check ${{ env.LINT_MODULES }} 2>&1 | tee ruff-output.txt
+          RUFF_EXIT_CODE=$?
+          echo -n $RUFF_EXIT_CODE > ruff-status.txt
+
+      - name: Run mypy
+        run: |
+          uv run mypy ${{ env.LINT_MODULES }} --explicit-package-bases 2>&1 | tee mypy-output.txt
+          MYPY_EXIT_CODE=$?
+          echo -n $MYPY_EXIT_CODE > mypy-status.txt
+
+      - name: Run pytest
+        run: |
+          uv run coverage run --branch -m pytest -v --disable-warnings
+          uv run coverage report --ignore-errors --show-missing
