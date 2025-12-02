@@ -97,7 +97,7 @@ graph TD
 ### Phase 5: Synthesis and Safety Validation
 
 - `synthesis_node`: Aggregates insights from all specialist agents into a cohesive draft response.
-- `synthesis_node` → `contraindication_check`: "Salt-Ramen" Safety Layer - validates interactions between recommendations (e.g., Western medications vs. herbal supplements, dietary restrictions).
+- `synthesis_node` → `contraindication_check`: Safety Layer - validates interactions between recommendations (e.g., Western medications vs. herbal supplements, dietary restrictions).
   - **Risk Detected** → `adjustment_node` → `response_generator`: Refines recommendations to eliminate safety risks.
   - **Safe** → `response_generator`: Proceeds directly to response generation.
 
