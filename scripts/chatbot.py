@@ -26,9 +26,13 @@ class AgentClient:
     def __init__(self, config: Config):
         self.config = config
 
-    def send_query(self, query: str) -> dict:
+    def send_query(self, query: str) -> str:
         """Sends a query to the Agent/Orchestrator API and returns the response."""
-        payload = {"user_input": query, "session_id": st.session_state["session_id"]}
+        payload = {
+            "session_id": st.session_state["session_id"],
+            "user_id": st.session_state["user_id"],
+            "user_input": query,
+        }
         try:
             response = requests.post(
                 self.config.QUERY_URL, json=payload, timeout=self.config.TIMEOUT
@@ -50,11 +54,13 @@ class ChatInterface:
     def _init_state(self):  # noqa: PLR6301
         if "session_id" not in st.session_state:
             st.session_state["session_id"] = str(uuid.uuid4())
+        if "user_id" not in st.session_state:
+            st.session_state["user_id"] = "user-123"
         if "messages" not in st.session_state:
             st.session_state["messages"] = []
         if "session_metadata" not in st.session_state:
             st.session_state["session_metadata"] = SessionState(
-                session_id=st.session_state["session_id"]
+                session_id=st.session_state["session_id"], user_id=st.session_state["user_id"]
             ).model_dump()
 
     def render(self):

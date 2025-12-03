@@ -19,8 +19,10 @@ async def chat(
     request: UserInput, orchestrator: Annotated[Orchestrator, Depends(get_orchestrator)]
 ) -> JSONResponse:
     session_id = request.session_id or f"session-{uuid4()}"
+    user_id = request.user_id or "user-123"
+    user_input = request.user_input
     try:
-        result = await orchestrator.run(request.user_input, session_id)
+        result = await orchestrator.run(session_id, user_id, user_input)
         return JSONResponse(content=result, status_code=200)
     except Exception as e:
         LOGGER.exception("Orchestrator failed.")
