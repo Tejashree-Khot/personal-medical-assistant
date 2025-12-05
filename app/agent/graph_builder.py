@@ -44,12 +44,14 @@ class GraphBuilder:
         """
         graph.add_node("input_guardrail", self.orchestrator.nodes.input_guardrail)
         graph.add_node("response", self.orchestrator.nodes.response)
-        graph.add_node("load_profile", self.orchestrator.nodes.load_profile)
         graph.add_node("general_agent", self.orchestrator.nodes.general_agent)
-        graph.add_node("medical_supervisor", self.orchestrator.nodes.medical_supervisor)
         graph.add_node("ensure_details", self.orchestrator.nodes.ensure_details)
+        graph.add_node(
+            "ancient_knowledge_router", self.orchestrator.edges.route_ancient_knowledge_router
+        )
         graph.add_node("ancient_knowledge", self.orchestrator.nodes.ancient_knowledge)
         graph.add_node("allopathy_agent", self.orchestrator.nodes.allopathy_agent)
+        graph.add_node("emergency_response", self.orchestrator.nodes.emergency_response)
         graph.add_node("tcm_kampo_agent", self.orchestrator.nodes.tcm_kampo_agent)
         graph.add_node("ayurveda_agent", self.orchestrator.nodes.ayurveda_agent)
         graph.add_node("lifestyle_agent", self.orchestrator.nodes.lifestyle_agent)
@@ -57,7 +59,6 @@ class GraphBuilder:
         graph.add_node("contraindication_check", self.orchestrator.nodes.contraindication_check)
         graph.add_node("adjustment_node", self.orchestrator.nodes.adjustment_node)
         graph.add_node("response_generator", self.orchestrator.nodes.response_generator)
-        graph.add_node("profile_extractor", self.orchestrator.nodes.profile_extractor)
 
     def _add_edges(self, graph: StateGraph) -> None:
         """Add static edges to the graph.
@@ -66,8 +67,6 @@ class GraphBuilder:
             graph: The StateGraph instance.
         """
         graph.add_edge(START, "input_guardrail")
-        graph.add_edge("load_profile", "ensure_details")
-
         graph.add_edge("ancient_knowledge", "allopathy_agent")
         graph.add_edge("ancient_knowledge", "tcm_kampo_agent")
         graph.add_edge("ancient_knowledge", "ayurveda_agent")
@@ -79,9 +78,9 @@ class GraphBuilder:
         graph.add_edge("synthesis_node", "contraindication_check")
         graph.add_edge("contraindication_check", "adjustment_node")
         graph.add_edge("adjustment_node", "response_generator")
-        graph.add_edge("response_generator", "profile_extractor")
-        graph.add_edge("profile_extractor", "response")
+        graph.add_edge("response_generator", "response")
         graph.add_edge("general_agent", "response")
+        graph.add_edge("emergency_response", "response")
         graph.add_edge("response", END)
 
     def _add_conditional_edges(self, graph: StateGraph) -> None:
@@ -94,20 +93,20 @@ class GraphBuilder:
             "input_guardrail",
             self.orchestrator.edges.route_input_guardrail,
             {
-                "response": "response",
-                "load_profile": "load_profile",
+                "emergency_response": "emergency_response",
+                "ensure_details": "ensure_details",
                 "general_agent": "general_agent",
             },
         )
         graph.add_conditional_edges(
             "ensure_details",
             self.orchestrator.edges.route_ensure_details,
-            {"medical_supervisor": "medical_supervisor", "response": "response"},
+            {"ancient_knowledge_router": "ancient_knowledge_router", "response": "response"},
         )
 
         graph.add_conditional_edges(
-            "medical_supervisor",
-            self.orchestrator.edges.route_medical_supervisor,
+            "ancient_knowledge_router",
+            self.orchestrator.edges.route_ancient_knowledge_router,
             {"response": "response", "ancient_knowledge": "ancient_knowledge"},
         )
 
