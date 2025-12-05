@@ -20,7 +20,6 @@ def parse_json_response(response_text: str) -> dict[str, Any]:
     # small LLMs can fail to provide valid JSON and provide some text before and after the JSON
     response_text = response_text[response_text.find("{") : response_text.rfind("}") + 1]
     try:
-        LOGGER.info("Response text: %s", response_text)
         response_dict = json.loads(response_text)
     except json.JSONDecodeError as e:
         LOGGER.error(f"Failed to parse JSON response: {e}")
