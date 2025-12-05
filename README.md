@@ -1,10 +1,56 @@
-# Medical Personalized Agent
+# Personalized Medical Assistant
 
 ## Overview
 
-The **Medical Personalized Agent** is an advanced AI assistant designed to provide comprehensive, personalized medical advice. It uniquely bridges the gap between modern Western medicine (Allopathy) and traditional healing systems (Ayurveda, TCM/Kampo), while integrating lifestyle and nutritional guidance.
+The **Personalized Medical Assistant** is an advanced AI assistant designed to provide comprehensive, personalized medical advice. It uniquely bridges the gap between modern Western medicine (Allopathy) and traditional healing systems (Ayurveda, TCM/Kampo), while integrating lifestyle and nutritional guidance.
 
 Crucially, the system implements a safety layer—a rigorous contraindication check that ensures traditional remedies (e.g., herbal supplements) do not negatively interact with modern prescriptions or specific patient conditions (e.g., hypertension).
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.13 or higher
+- [uv](https://github.com/astral-sh/uv) package manager
+- docker and docker-compose
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone <repository-url>
+   cd personal-medical-assistant
+   ```
+
+2. Install dependencies using `uv`:
+
+   ```bash
+   uv sync
+   ```
+
+3. Set up environment variables:
+   Create a `.env` file in the `app` directory with necessary API keys (OpenAI, Groq, Database URL, etc.).
+
+### Running the Application
+
+To start the FastAPI server locally:
+In terminal 1
+
+```bash
+cd app
+docker-compose up
+```
+
+API will be available at `http://localhost:8080`.
+
+In terminal 2
+
+```bash
+uv run streamlit run scripts/chatbot.py
+```
+
+The UI will be available at `http://localhost:8501`.
 
 ## Key Features
 
@@ -39,39 +85,3 @@ For a detailed visual representation, see [Orchestration Flow](docs/orchestratio
 - **Database**: PostgreSQL (with `asyncpg` and `langgraph-checkpoint-postgres`)
 - **Runtime**: Python 3.13+
 - **Package Manager**: uv
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.13 or higher
-- [uv](https://github.com/astral-sh/uv) package manager
-- PostgreSQL database
-
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone <repository-url>
-   cd personal-medical-assistant
-   ```
-
-2. Install dependencies using `uv`:
-
-   ```bash
-   uv sync
-   ```
-
-3. Set up environment variables:
-   Create a `.env` file in the `app` directory with necessary API keys (OpenAI, Groq, Database URL, etc.).
-
-### Running the Application
-
-To start the FastAPI server locally:
-
-```bash
-uv run uvicorn app.main:app --reload
-```
-
-The API will be available at `http://localhost:8000`.
