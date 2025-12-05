@@ -1,6 +1,5 @@
 import logging
 from typing import Annotated
-from uuid import uuid4
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
@@ -18,7 +17,7 @@ LOGGER.setLevel(logging.INFO)
 async def chat(
     request: UserInput, orchestrator: Annotated[Orchestrator, Depends(get_orchestrator)]
 ) -> JSONResponse:
-    session_id = request.session_id or f"session-{uuid4()}"
+    session_id = request.session_id or "session-123"
     user_id = request.user_id or "user-123"
     user_input = request.user_input
     try:

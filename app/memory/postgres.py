@@ -1,3 +1,4 @@
+import json
 from contextlib import asynccontextmanager
 from datetime import datetime
 
@@ -111,15 +112,19 @@ class PostgresClient:
                     session_id TEXT PRIMARY KEY,
                     user_id TEXT,
                     user_input TEXT,
-                    is_medical BOOLEAN,
                     allopathy_advice TEXT,
                     ayurveda_advice TEXT,
-                    tcm_advice TEXT,
+                    conversation_history JSONB,
+                    gathered_ancient_knowledge BOOLEAN,
+                    has_sufficient_details BOOLEAN,
+                    has_contraindications BOOLEAN,
+                    is_emergency BOOLEAN,
+                    is_medical BOOLEAN,
                     lifestyle_advice TEXT,
                     response TEXT,
                     safety_warnings JSONB,
-                    conversation_history JSONB,
-                    profile JSONB,
+                    tcm_advice TEXT,
+                    user_profile JSONB,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
@@ -127,59 +132,104 @@ class PostgresClient:
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS user_profile (
                     user_id TEXT PRIMARY KEY,
-                    allergies JSONB,
+                    name TEXT,
+                    allergies TEXT,
+                    ayurveda JSONB,
                     biometrics JSONB,
                     demographics JSONB,
                     diet JSONB,
+                    health_goals JSONB,
                     lifestyle JSONB,
                     medical_history JSONB,
+                    other TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
 
-    async def add_state(self, state: SessionState):
-        import json
+            await conn.execute("""
+                ALTER TABLE user_profile 
+                ADD COLUMN IF NOT EXISTS name TEXT;
+            """)
 
+    async def add_state(self, state: SessionState):
         await self.ensure_pool()
         async with self.pool.connection() as conn:
             await conn.execute(
                 """
                 INSERT INTO session_state (
-                    session_id, user_id, user_input, is_medical, allopathy_advice, ayurveda_advice, 
-                    tcm_advice, lifestyle_advice, response, safety_warnings, conversation_history, profile, updated_at
+                    session_id, 
+                    user_id, 
+                    user_input, 
+                    allopathy_advice, 
+                    ayurveda_advice, 
+                    conversation_history,
+                    gathered_ancient_knowledge,
+                    has_sufficient_details,
+                    has_contraindications,
+                    is_emergency,
+                    is_medical,
+                    lifestyle_advice,
+                    response,
+                    safety_warnings,
+                    tcm_advice,
+                    user_profile
                 )
                 VALUES (
-                    %(session_id)s, %(user_id)s, %(user_input)s, %(is_medical)s, %(allopathy_advice)s, %(ayurveda_advice)s,
-                    %(tcm_advice)s, %(lifestyle_advice)s, %(response)s, %(safety_warnings)s::jsonb, %(conversation_history)s::jsonb, %(profile)s::jsonb, CURRENT_TIMESTAMP
+                    %(session_id)s, 
+                    %(user_id)s, 
+                    %(user_input)s, 
+                    %(allopathy_advice)s, 
+                    %(ayurveda_advice)s, 
+                    %(conversation_history)s, 
+                    %(gathered_ancient_knowledge)s, 
+                    %(has_sufficient_details)s, 
+                    %(has_contraindications)s, 
+                    %(is_emergency)s, 
+                    %(is_medical)s, 
+                    %(lifestyle_advice)s, 
+                    %(response)s, 
+                    %(safety_warnings)s, 
+                    %(tcm_advice)s, 
+                    %(user_profile)s
                 )
                 ON CONFLICT (session_id) DO UPDATE SET
                     user_id = EXCLUDED.user_id,
                     user_input = EXCLUDED.user_input,
-                    is_medical = EXCLUDED.is_medical,
                     allopathy_advice = EXCLUDED.allopathy_advice,
                     ayurveda_advice = EXCLUDED.ayurveda_advice,
-                    tcm_advice = EXCLUDED.tcm_advice,
+                    conversation_history = EXCLUDED.conversation_history,
+                    gathered_ancient_knowledge = EXCLUDED.gathered_ancient_knowledge,
+                    has_sufficient_details = EXCLUDED.has_sufficient_details,
+                    has_contraindications = EXCLUDED.has_contraindications,
+                    is_emergency = EXCLUDED.is_emergency,
+                    is_medical = EXCLUDED.is_medical,
                     lifestyle_advice = EXCLUDED.lifestyle_advice,
                     response = EXCLUDED.response,
                     safety_warnings = EXCLUDED.safety_warnings,
-                    conversation_history = EXCLUDED.conversation_history,
-                    profile = EXCLUDED.profile,
+                    tcm_advice = EXCLUDED.tcm_advice,
+                    user_profile = EXCLUDED.user_profile,
                     updated_at = CURRENT_TIMESTAMP;
                 """,
                 {
                     "session_id": state.session_id,
                     "user_id": state.user_id,
                     "user_input": state.user_input,
-                    "is_medical": state.is_medical,
                     "allopathy_advice": state.allopathy_advice,
                     "ayurveda_advice": state.ayurveda_advice,
-                    "tcm_advice": state.tcm_advice,
+                    "conversation_history": json.dumps(state.conversation_history),
+                    "gathered_ancient_knowledge": state.gathered_ancient_knowledge,
+                    "has_sufficient_details": state.has_sufficient_details,
+                    "has_contraindications": state.has_contraindications,
+                    "is_emergency": state.is_emergency,
+                    "is_medical": state.is_medical,
                     "lifestyle_advice": state.lifestyle_advice,
                     "response": state.response,
                     "safety_warnings": json.dumps(state.safety_warnings),
-                    "conversation_history": json.dumps(state.conversation_history),
-                    "profile": state.user_profile.model_dump_json() if state.user_profile else None,
+                    "tcm_advice": state.tcm_advice,
+                    "user_profile": state.user_profile.model_dump_json()
+                    if state.user_profile
+                    else None,
                 },
             )
 
@@ -196,41 +246,58 @@ class PostgresClient:
                     return SessionState(**row)
         return None
 
-    async def save_user_profile(self, profile: "UserProfile"):
+    async def save_user_profile(self, user_profile: UserProfile):
         await self.ensure_pool()
         async with self.pool.connection() as conn:
             await conn.execute(
                 """
                 INSERT INTO user_profile (
-                    user_id, allergies, biometrics, demographics, diet, lifestyle, medical_history, updated_at
+                    user_id, name, allergies, ayurveda, biometrics, demographics, diet, health_goals, lifestyle, medical_history, updated_at
                 )
                 VALUES (
-                    %(user_id)s, %(allergies)s::jsonb, %(biometrics)s::jsonb, %(demographics)s::jsonb,
-                    %(diet)s::jsonb, %(lifestyle)s::jsonb, %(medical_history)s::jsonb, CURRENT_TIMESTAMP
+                    %(user_id)s, %(name)s, %(allergies)s, %(ayurveda)s::jsonb, %(biometrics)s::jsonb, %(demographics)s::jsonb,
+                    %(diet)s::jsonb, %(health_goals)s::jsonb, %(lifestyle)s::jsonb, %(medical_history)s::jsonb, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT (user_id) DO UPDATE SET
-                    allergies = EXCLUDED.allergies,
-                    biometrics = EXCLUDED.biometrics,
-                    demographics = EXCLUDED.demographics,
-                    diet = EXCLUDED.diet,
-                    lifestyle = EXCLUDED.lifestyle,
-                    medical_history = EXCLUDED.medical_history,
+                    name = COALESCE(EXCLUDED.name, user_profile.name),
+                    allergies = COALESCE(EXCLUDED.allergies, user_profile.allergies),
+                    ayurveda = COALESCE(EXCLUDED.ayurveda, user_profile.ayurveda),
+                    biometrics = COALESCE(EXCLUDED.biometrics, user_profile.biometrics),
+                    demographics = COALESCE(EXCLUDED.demographics, user_profile.demographics),
+                    diet = COALESCE(EXCLUDED.diet, user_profile.diet),
+                    health_goals = COALESCE(EXCLUDED.health_goals, user_profile.health_goals),
+                    lifestyle = COALESCE(EXCLUDED.lifestyle, user_profile.lifestyle),
+                    medical_history = COALESCE(EXCLUDED.medical_history, user_profile.medical_history),
                     updated_at = CURRENT_TIMESTAMP;
                 """,
                 {
-                    "user_id": profile.user_id,
-                    "allergies": profile.allergies.model_dump_json(),
-                    "biometrics": profile.biometrics.model_dump_json(),
-                    "demographics": profile.demographics.model_dump_json(),
-                    "diet": profile.diet.model_dump_json(),
-                    "lifestyle": profile.lifestyle.model_dump_json(),
-                    "medical_history": profile.medical_history.model_dump_json(),
+                    "user_id": user_profile.user_id,
+                    "name": user_profile.name,
+                    "allergies": user_profile.allergies,
+                    "ayurveda": user_profile.ayurveda.model_dump_json()
+                    if user_profile.ayurveda
+                    else None,
+                    "biometrics": user_profile.biometrics.model_dump_json()
+                    if user_profile.biometrics
+                    else None,
+                    "demographics": user_profile.demographics.model_dump_json()
+                    if user_profile.demographics
+                    else None,
+                    "diet": user_profile.diet.model_dump_json() if user_profile.diet else None,
+                    "health_goals": user_profile.health_goals.model_dump_json()
+                    if user_profile.health_goals
+                    else None,
+                    "lifestyle": user_profile.lifestyle.model_dump_json()
+                    if user_profile.lifestyle
+                    else None,
+                    "medical_history": user_profile.medical_history.model_dump_json()
+                    if user_profile.medical_history
+                    else None,
+                    "other": user_profile.other,
                 },
             )
 
-    async def get_user_profile(self, user_id: str) -> "UserProfile | None":
-        from config.state import UserProfile
-
+    async def get_user_profile(self, user_id: str) -> UserProfile | None:
         await self.ensure_pool()
         async with self.pool.connection() as conn:
             async with conn.cursor() as cur:

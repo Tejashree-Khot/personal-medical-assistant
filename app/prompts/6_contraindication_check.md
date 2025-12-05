@@ -13,6 +13,7 @@ Analyze the synthesized medical response for potential safety issues, interactio
 - Contraindications based on current medications
 - Allergic reaction risks
 - Pregnancy/breastfeeding considerations if applicable
+- If no contraindications are found, set has_contraindications to false and details to empty string.
 
 # Input
 **Synthesized response:** {synthesized_response}
@@ -29,5 +30,3 @@ Return **strictly** in the following JSON format. Do not add any other text.
   "response": "Detailed explanation of any safety concerns found"
 }}
 ```
-
-If no contraindications are found, set has_contraindications to false and details to empty string.

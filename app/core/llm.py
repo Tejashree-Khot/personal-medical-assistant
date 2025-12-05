@@ -10,7 +10,7 @@ load_dotenv()
 class LLMClient:
     def __init__(self):
         self.model = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model="meta-llama/llama-4-maverick-17b-128e-instruct",
             api_key=SecretStr(os.environ["GROQ_API_KEY"]),
             temperature=0.0,
         )
