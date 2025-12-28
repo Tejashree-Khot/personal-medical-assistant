@@ -15,20 +15,19 @@ graph TD
     %% Input routing
     input_guardrail -->|emergency detected| response[Response]
     input_guardrail -->|general_agent| general_agent[General Agent]
-    input_guardrail -->|load_profile| load_profile[Load Profile]
+    input_guardrail -->|ensure_details| ensure_details[Ensure Details]
+    input_guardrail --> profile_extractor[Profile Extractor]
 
     %% General Agent
     general_agent --> response
 
     %% Profile and details
-    load_profile --> ensure_details[Ensure Details]
     ensure_details -->|request more details| response
-    ensure_details -->|supervisor_needed| medical_supervisor{Medical Supervisor}
-    ensure_details --> profile_extractor[Profile Extractor]
+    ensure_details -->|supervisor_needed| ancient_knowledge_router{Ancient Knowledge Router}
 
     %% Supervisor routing
-    medical_supervisor -->|No need to call specialists Or </br> Already gathered ancient knowledge| response
-    medical_supervisor -->|ancient_knowledge| ancient_knowledge{Ancient Knowledge}
+    ancient_knowledge_router -->|ancient_knowledge| ancient_knowledge{Ancient Knowledge}
+    ancient_knowledge_router -->|Bypass if already gathered ancient knowledge| response
 
     %% Knowledge agents
     ancient_knowledge --> allopathy_agent[Allopathy Agent]
@@ -58,8 +57,8 @@ graph TD
     classDef startEndNode fill:#c8e6c9,stroke:#1b5e20,stroke-width:3px
 
     class general_agent,allopathy_agent,ayurveda_agent,tcm_kampo_agent,lifestyle_agent processNode
-    class load_profile,ensure_details,medical_supervisor,ancient_knowledge,synthesis_node,contraindication_check,adjustment_node,response_generator,profile_extractor processNode
-    class input_guardrail,medical_supervisor,ancient_knowledge,contraindication_check decisionNode
+    class load_profile,ensure_details,ancient_knowledge_router,ancient_knowledge,synthesis_node,contraindication_check,adjustment_node,response_generator,profile_extractor processNode
+    class input_guardrail,ancient_knowledge_router,ancient_knowledge,contraindication_check decisionNode
     class START,END startEndNode
 ```
 

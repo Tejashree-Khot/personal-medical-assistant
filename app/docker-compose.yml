@@ -18,7 +18,7 @@ services:
   fastapi-backend:
     build: .
     depends_on:
-      db:
+      medical_assistant_db:
         condition: service_healthy
     restart: unless-stopped
     volumes:

@@ -1,52 +1,65 @@
+from dataclasses import dataclass
 from typing import Any, List
 
 from pydantic import BaseModel, Field
 
 
-class Allergy(BaseModel):
-    allergies: List[str]
+class Ayurveda(BaseModel):
+    dosha_type: str | None = None
+    constitution: str | None = None
+    imbalances: List[str] | None = None
 
 
 class Biometrics(BaseModel):
-    age: int
-    BMI: float
-    BMR: float
-    gender: str
-    height: int
-    weight: int
+    age: int | None = None
+    BMI: float | None = None
+    BMR: float | None = None
+    gender: str | None = None
+    height: float | None = None
+    weight: float | None = None
 
 
 class Demographics(BaseModel):
-    city: str
-    country: str
-    region: str
+    city: str | None = None
+    country: str | None = None
+    region: str | None = None
 
 
 class Diet(BaseModel):
-    dietary_preferences: List[str]
-    dietary_restrictions: List[str]
+    dietary_preferences: List[str] | None = None
+    dietary_restrictions: List[str] | None = None
+
+
+class HealthGoals(BaseModel):
+    goals: List[str] | None = None
+    concerns: List[str] | None = None
 
 
 class Lifestyle(BaseModel):
-    activities: List[str]
-    sleep_patterns: List[str]
-    stress_levels: List[str]
+    activities: List[str] | None = None
+    sleep_patterns: List[str] | None = None
+    stress_levels: List[str] | None = None
 
 
 class MedicalHistory(BaseModel):
-    medications: List[str]
-    medical_conditions: List[str]
+    medications: List[str] | None = None
+    medical_conditions: List[str] | None = None
+    supplements: List[str] | None = None
 
 
 class UserProfile(BaseModel):
     user_id: str
+    name: str | None = None
 
-    allergies: Allergy
-    biometrics: Biometrics
-    demographics: Demographics
-    diet: Diet
-    lifestyle: Lifestyle
-    medical_history: MedicalHistory
+    allergies: str | None = Field(default=None)
+    ayurveda: Ayurveda = Field(default_factory=Ayurveda)
+    biometrics: Biometrics = Field(default_factory=Biometrics)
+    demographics: Demographics = Field(default_factory=Demographics)
+    diet: Diet = Field(default_factory=Diet)
+    health_goals: HealthGoals = Field(default_factory=HealthGoals)
+    lifestyle: Lifestyle = Field(default_factory=Lifestyle)
+    medical_history: MedicalHistory = Field(default_factory=MedicalHistory)
+    other: str | None = None
 
 
 class SessionState(BaseModel):
@@ -70,13 +83,20 @@ class SessionState(BaseModel):
     allopathy_advice: str = Field(default="")
     ayurveda_advice: str = Field(default="")
     conversation_history: list[dict[str, Any]] = Field(default_factory=list)
+    gathered_ancient_knowledge: bool = Field(default=False)
+    has_sufficient_details: bool = Field(default=False)
+    has_contraindications: bool = Field(default=False)
+    is_emergency: bool = Field(default=False)
     is_medical: bool = Field(default=False)
     lifestyle_advice: str = Field(default="")
-    user_profile: UserProfile | None = None
     response: str = Field(default="")
     safety_warnings: List[str] = Field(default_factory=list)
     tcm_advice: str = Field(default="")
-    is_emergency: bool = Field(default=False)
-    needs_clarification: bool = Field(default=False)
-    clarification_questions: List[str] = Field(default_factory=list)
-    has_contraindications: bool = Field(default=False)
+    user_profile: UserProfile | None = None
+
+
+@dataclass
+class Context:
+    """Context schema for LangGraph execution."""
+
+    user_profile: UserProfile | None = None
