@@ -1,18 +1,12 @@
-import os
-
-from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from pydantic import SecretStr
 
-load_dotenv()
+from config.settings import settings
 
 
 class LLMClient:
     def __init__(self):
         self.model = ChatGroq(
-            model="llama-3.3-70b-versatile",
-            api_key=SecretStr(os.environ["GROQ_API_KEY"]),
-            temperature=0.0,
+            model=settings.LLM_MODEL_NAME, api_key=settings.GROQ_API_KEY, temperature=0.0
         )
 
     async def ainvoke(self, messages):
@@ -26,6 +20,3 @@ class LLMClient:
         """
         response = await self.model.ainvoke(messages)
         return response.content
-
-
-llm_client = LLMClient()

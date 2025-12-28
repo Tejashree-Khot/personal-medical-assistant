@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from service.lifespan import lifespan
 from service.routes import router
-from service.utils import lifespan
 
 app = FastAPI(
     lifespan=lifespan, title="Medical AI Agent", description="Medical AI Agent", version="1.0.0"

@@ -106,8 +106,9 @@ class Edges:
 
 
 class Orchestrator:
-    def __init__(self, llm_client: LLMClient):
+    def __init__(self, llm_client: LLMClient, postgres_client: PostgresClient):
         self.llm_client = llm_client
+        self.postgres_client = postgres_client
         self.nodes = Nodes(llm_client)
         self.edges = Edges()
 

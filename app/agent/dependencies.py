@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from agent.orchestration import Orchestrator
 from core.llm import LLMClient
+from memory.postgres import PostgresClient
 
 
 @lru_cache
@@ -16,6 +17,12 @@ def get_llm_client() -> LLMClient:
 
 
 @lru_cache
+def get_postgres_client() -> PostgresClient:
+    """Get or create the singleton PostgresClient instance."""
+    return PostgresClient()
+
+
+@lru_cache
 def get_orchestrator() -> Orchestrator:
     """Get or create the singleton Orchestrator instance.
 
@@ -24,4 +31,4 @@ def get_orchestrator() -> Orchestrator:
 
     :return: The singleton Orchestrator instance.
     """
-    return Orchestrator(llm_client=get_llm_client())
+    return Orchestrator(llm_client=get_llm_client(), postgres_client=get_postgres_client())
