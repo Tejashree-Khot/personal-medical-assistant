@@ -34,7 +34,6 @@ class Orchestrator:
 
     async def load_state_memory(self, session_id: str) -> SessionState:
         """Load state memory from Postgres."""
-        await self.postgres_client.create_tables()
         state = await self.postgres_client.get_state(session_id)
         if state:
             return state

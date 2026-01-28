@@ -104,10 +104,10 @@ class PostgresClient:
             )
             await self.pool.open()
 
-    async def create_tables(self):
-        await self.ensure_pool()
-        async with self.pool.connection() as conn:
-            await conn.execute("""
+    def create_tables(self):
+        self.ensure_pool()
+        with self.pool.connection() as conn:
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS session_state (
                     session_id TEXT PRIMARY KEY,
                     user_id TEXT,
@@ -129,7 +129,7 @@ class PostgresClient:
                 );
             """)
 
-            await conn.execute("""
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS user_profile (
                     user_id TEXT PRIMARY KEY,
                     name TEXT,
@@ -147,7 +147,7 @@ class PostgresClient:
                 );
             """)
 
-            await conn.execute("""
+            conn.execute("""
                 ALTER TABLE user_profile 
                 ADD COLUMN IF NOT EXISTS name TEXT;
             """)
