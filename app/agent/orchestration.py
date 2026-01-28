@@ -1,18 +1,13 @@
 """Agent Orchestrator logic."""
 
 import logging
-from typing import TYPE_CHECKING
 
 from langchain_core.runnables import RunnableConfig
-from langgraph.runtime import Runtime
-
-if TYPE_CHECKING:
-    from config.state import UserProfile
 
 from agent.graph_builder import GraphBuilder
 from agent.graph_edges import ConditionalEdges
 from agent.graph_nodes import Nodes
-from config.state import Context, SessionState, UserProfile
+from config.state import SessionState, UserProfile
 from core.llm import LLMClient
 from memory.postgres import PostgresClient
 from utils.logger import configure_logging
@@ -28,7 +23,6 @@ class Orchestrator:
         self.postgres_client = postgres_client
         self.nodes = Nodes(llm_client)
         self.conditional_edges = ConditionalEdges()
-
         self.graph_builder = GraphBuilder(self)
         self.graph = self.graph_builder.build()
 
@@ -36,9 +30,8 @@ class Orchestrator:
         """Load state memory from Postgres."""
         await self.postgres_client.create_tables()
         state = await self.postgres_client.get_state(session_id)
-        if state:
-            return state
-        return SessionState(session_id=session_id)
+        state = state if state else SessionState(session_id=session_id)
+        return state
 
     async def save_state_memory(self, state: SessionState) -> None:
         """Save state memory to Postgres."""
@@ -66,10 +59,7 @@ class Orchestrator:
         state.user_profile = user_profile or UserProfile(user_id=user_id)
 
         try:
-            context = Context()
-            state_dict = await self.graph.ainvoke(
-                state.model_dump(), config, runtime=Runtime(context=context), stream_mode="values"
-            )
+            state_dict = await self.graph.ainvoke(state.model_dump(), config, stream_mode="values")
             LOGGER.info("Orchestrator completed.")
 
             state_from_result = SessionState(**state_dict)

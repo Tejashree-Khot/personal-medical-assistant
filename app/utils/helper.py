@@ -24,5 +24,5 @@ def parse_json_response(response_text: str) -> dict[str, Any]:
         response_dict = json.loads(response_text)
     except json.JSONDecodeError as e:
         LOGGER.error(f"Failed to parse JSON response: {e}")
-        return {}
+        return {"response": response_text}
     return response_dict

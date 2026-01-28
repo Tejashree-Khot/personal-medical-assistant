@@ -54,14 +54,3 @@ class ConditionalEdges:
         if state.gathered_ancient_knowledge:
             return "ancient_knowledge"
         return "response"
-
-    @staticmethod
-    def route_contraindication_check(state: SessionState) -> str:
-        """Route based on contraindication check.
-
-        If contraindications detected, go to adjustment_node.
-        Otherwise, go to response_generator.
-        """
-        if state.has_contraindications:
-            return "adjustment_node"
-        return "response_generator"
