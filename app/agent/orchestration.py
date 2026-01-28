@@ -6,30 +6,14 @@ from typing import TYPE_CHECKING
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
-from langgraph.types import Send
 
 if TYPE_CHECKING:
     from config.state import UserProfile
 
 from agent.graph_builder import GraphBuilder
-from agent.nodes import (
-    AdjustmentNode,
-    AllopathyAgentNode,
-    AncientKnowledgeNode,
-    AyurvedaAgentNode,
-    ContraindicationCheckNode,
-    EmergencyResponseNode,
-    EnsureDetailsNode,
-    GeneralAgentNode,
-    InputGuardrailNode,
-    LifestyleAgentNode,
-    ProfileExtractorNode,
-    ResponseGeneratorNode,
-    ResponseNode,
-    SynthesisNode,
-    TCMKampoAgentNode,
-)
-from agent.utils import configure_logging
+from agent.graph_edges import Edges
+from app.agent.graph_nodes import Nodes
+from app.utils.logger import configure_logging
 from config.state import Context, SessionState, UserProfile
 from core.llm import LLMClient
 from memory.postgres import PostgresClient
@@ -37,79 +21,6 @@ from memory.postgres import PostgresClient
 configure_logging()
 LOGGER = logging.getLogger("agent")
 LOGGER.setLevel(logging.INFO)
-
-
-class Nodes:
-    """Container for all orchestration nodes."""
-
-    def __init__(self, llm_client: LLMClient) -> None:
-        self.input_guardrail = InputGuardrailNode(llm_client).run
-        self.emergency_response = EmergencyResponseNode(llm_client).run
-        self.response = ResponseNode().run
-        self.general_agent = GeneralAgentNode(llm_client).run
-        self.ensure_details = EnsureDetailsNode(llm_client).run
-        self.ancient_knowledge = AncientKnowledgeNode(llm_client).run
-        self.allopathy_agent = AllopathyAgentNode(llm_client).run
-        self.tcm_kampo_agent = TCMKampoAgentNode(llm_client).run
-        self.ayurveda_agent = AyurvedaAgentNode(llm_client).run
-        self.lifestyle_agent = LifestyleAgentNode(llm_client).run
-        self.synthesis_node = SynthesisNode(llm_client).run
-        self.contraindication_check = ContraindicationCheckNode(llm_client).run
-        self.adjustment_node = AdjustmentNode(llm_client).run
-        self.response_generator = ResponseGeneratorNode(llm_client).run
-        self.response_generator = ResponseGeneratorNode(llm_client).run
-        self.profile_extractor = ProfileExtractorNode(llm_client).run
-
-
-class Edges:
-    """Container for all edge routing functions."""
-
-    @staticmethod
-    def route_input_guardrail(state: SessionState) -> str:
-        """Route based on input guardrail check.
-
-        If emergency detected, go to response_node.
-        Otherwise, go to profile_extractor.
-        """
-        if state.is_emergency:
-            return "emergency_response"
-        elif state.is_medical:
-            return "ensure_details"
-        else:
-            return "general_agent"
-
-    @staticmethod
-    def route_ensure_details(state: SessionState) -> str:
-        """Route based on ensure details classification.
-
-        If sufficient details, go to ancient_knowledge_router.
-        Otherwise, go to response.
-        """
-        if state.has_sufficient_details:
-            return "ancient_knowledge_router"
-        return "response"
-
-    @staticmethod
-    def route_ancient_knowledge_router(state: SessionState) -> str | list[Send]:
-        """Route based on ancient knowledge router decision.
-
-        If needs ancient knowledge, go to ancient_knowledge.
-        Otherwise, go to response.
-        """
-        if state.gathered_ancient_knowledge:
-            return "ancient_knowledge"
-        return "response"
-
-    @staticmethod
-    def route_contraindication_check(state: SessionState) -> str:
-        """Route based on contraindication check.
-
-        If contraindications detected, go to adjustment_node.
-        Otherwise, go to response_generator.
-        """
-        if state.has_contraindications:
-            return "adjustment_node"
-        return "response_generator"
 
 
 class Orchestrator:
@@ -184,6 +95,7 @@ class Orchestrator:
 
             state_from_result = SessionState(**state_dict)
             await self.save_state_memory(state_from_result)
+            await self.save_user_profile(state.user_profile)
 
             return state_from_result.model_dump()
 

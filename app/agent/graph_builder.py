@@ -16,19 +16,11 @@ class GraphBuilder:
     """Builds the LangGraph state graph structure."""
 
     def __init__(self, orchestrator: "Orchestrator") -> None:
-        """Initialize the graph builder.
-
-        Args:
-            orchestrator: The orchestrator instance containing nodes and handlers.
-        """
+        """Initialize the graph builder."""
         self.orchestrator = orchestrator
 
     def build(self) -> CompiledStateGraph:
-        """Build and compile the LangGraph state graph.
-
-        Returns:
-            Compiled LangGraph instance with checkpointing enabled.
-        """
+        """Build and compile the LangGraph state graph."""
         memory = MemorySaver()
         graph = StateGraph(SessionState)
         self._add_nodes(graph)
@@ -37,18 +29,11 @@ class GraphBuilder:
         return graph.compile(checkpointer=memory)
 
     def _add_nodes(self, graph: StateGraph) -> None:
-        """Add all nodes to the graph.
-
-        Args:
-            graph: The StateGraph instance.
-        """
+        """Add all nodes to the graph."""
         graph.add_node("input_guardrail", self.orchestrator.nodes.input_guardrail)
         graph.add_node("response", self.orchestrator.nodes.response)
         graph.add_node("general_agent", self.orchestrator.nodes.general_agent)
         graph.add_node("ensure_details", self.orchestrator.nodes.ensure_details)
-        graph.add_node(
-            "ancient_knowledge_router", self.orchestrator.edges.route_ancient_knowledge_router
-        )
         graph.add_node("ancient_knowledge", self.orchestrator.nodes.ancient_knowledge)
         graph.add_node("allopathy_agent", self.orchestrator.nodes.allopathy_agent)
         graph.add_node("emergency_response", self.orchestrator.nodes.emergency_response)
@@ -59,13 +44,10 @@ class GraphBuilder:
         graph.add_node("contraindication_check", self.orchestrator.nodes.contraindication_check)
         graph.add_node("adjustment_node", self.orchestrator.nodes.adjustment_node)
         graph.add_node("response_generator", self.orchestrator.nodes.response_generator)
+        graph.add_node("profile_extractor", self.orchestrator.nodes.profile_extractor)
 
     def _add_edges(self, graph: StateGraph) -> None:
-        """Add static edges to the graph.
-
-        Args:
-            graph: The StateGraph instance.
-        """
+        """Add static edges to the graph."""
         graph.add_edge(START, "input_guardrail")
         graph.add_edge("ancient_knowledge", "allopathy_agent")
         graph.add_edge("ancient_knowledge", "tcm_kampo_agent")
@@ -81,14 +63,11 @@ class GraphBuilder:
         graph.add_edge("response_generator", "response")
         graph.add_edge("general_agent", "response")
         graph.add_edge("emergency_response", "response")
+        graph.add_edge("response", "profile_extractor")
         graph.add_edge("response", END)
 
     def _add_conditional_edges(self, graph: StateGraph) -> None:
-        """Add conditional edges with routing logic to the graph.
-
-        Args:
-            graph: The StateGraph instance.
-        """
+        """Add conditional edges with routing logic to the graph."""
         graph.add_conditional_edges(
             "input_guardrail",
             self.orchestrator.edges.route_input_guardrail,

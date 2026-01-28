@@ -1,11 +1,12 @@
 import json
 import logging
-import sys
 from pathlib import Path
 from typing import Any
 
-LOG_FORMAT = "%(levelname)s:     %(message)s"
-LOGGER = logging.getLogger("agent")
+from utils.logger import configure_logging
+
+configure_logging()
+LOGGER = logging.getLogger("nodes")
 LOGGER.setLevel(logging.INFO)
 
 
@@ -25,12 +26,3 @@ def parse_json_response(response_text: str) -> dict[str, Any]:
         LOGGER.error(f"Failed to parse JSON response: {e}")
         return {}
     return response_dict
-
-
-def configure_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format=LOG_FORMAT,
-        handlers=[logging.StreamHandler(sys.stdout)],
-        force=True,  # ensures consistent config across modules
-    )

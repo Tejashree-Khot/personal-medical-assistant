@@ -1,11 +1,10 @@
 """Orchestrator nodes."""
 
-import json
 import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from agent.utils import configure_logging, load_prompt, parse_json_response
+from app.utils.logger import configure_logging, load_prompt, parse_json_response
 from config.state import SessionState, UserProfile
 from core.llm import LLMClient
 
@@ -165,30 +164,6 @@ class EnsureDetailsNode(AgentNode):
         return state
 
 
-class ProfileExtractorNode(AgentNode):
-    prompt = load_prompt("3_profile_extractor.md")
-
-    async def run(self, state: SessionState) -> SessionState:
-        """Updates persistent user profile."""
-        LOGGER.info("ProfileExtractorNode: Updating user profile")
-        prompt_text = self.prompt.format(
-            user_input=state.user_input,
-            current_profile=json.dumps(state.user_profile.model_dump())
-            if state.user_profile
-            else "",
-        )
-        messages = self.prepare_messages(state, prompt_text)
-        response = await self.invoke_llm(messages)
-
-        try:
-            parsed_response = parse_json_response(response)
-            state = self.update_profile(state, parsed_response)
-        except Exception as e:
-            LOGGER.error(f"Error in ProfileExtractorNode: {e}", exc_info=True)
-            raise e
-        return state
-
-
 class AncientKnowledgeNode(AgentNode):
     async def run(self, state: SessionState) -> SessionState:
         """Decides if more info is needed or if specialists should run."""
@@ -329,6 +304,51 @@ class ResponseGeneratorNode(AgentNode):
         return state
 
 
+class ProfileExtractorNode(AgentNode):
+    prompt = load_prompt("profile_extractor.md")
+
+    async def run(self, state: SessionState) -> SessionState:
+        """Updates persistent user profile."""
+        LOGGER.info("ProfileExtractorNode: Updating user profile")
+        prompt_text = self.prompt.format(
+            user_input=state.user_input,
+            current_profile=json.dumps(state.user_profile.model_dump())
+            if state.user_profile
+            else "",
+        )
+        messages = self.prepare_messages(state, prompt_text)
+        response = await self.invoke_llm(messages)
+
+        try:
+            parsed_response = parse_json_response(response)
+            state = self.update_profile(state, parsed_response)
+        except Exception as e:
+            LOGGER.error(f"Error in ProfileExtractorNode: {e}", exc_info=True)
+            raise e
+        return state
+
+
 class ResponseNode(BaseNode):
     async def run(self, state: SessionState) -> dict[str, Any]:  # noqa: PLR6301
         return {"response": state.response}
+
+
+class Nodes:
+    """Container for all orchestration nodes."""
+
+    def __init__(self, llm_client: LLMClient) -> None:
+        self.input_guardrail = InputGuardrailNode(llm_client).run
+        self.emergency_response = EmergencyResponseNode(llm_client).run
+        self.general_agent = GeneralAgentNode(llm_client).run
+        self.ensure_details = EnsureDetailsNode(llm_client).run
+        self.ancient_knowledge = AncientKnowledgeNode(llm_client).run
+        self.allopathy_agent = AllopathyAgentNode(llm_client).run
+        self.tcm_kampo_agent = TCMKampoAgentNode(llm_client).run
+        self.ayurveda_agent = AyurvedaAgentNode(llm_client).run
+        self.lifestyle_agent = LifestyleAgentNode(llm_client).run
+        self.synthesis_node = SynthesisNode(llm_client).run
+        self.contraindication_check = ContraindicationCheckNode(llm_client).run
+        self.adjustment_node = AdjustmentNode(llm_client).run
+        self.response_generator = ResponseGeneratorNode(llm_client).run
+        self.response = ResponseNode().run
+        self.profile_extractor = ProfileExtractorNode(llm_client).run
