@@ -34,6 +34,7 @@ class GraphBuilder:
         graph.add_node("response", self.orchestrator.nodes.response)
         graph.add_node("general_agent", self.orchestrator.nodes.general_agent)
         graph.add_node("ensure_details", self.orchestrator.nodes.ensure_details)
+        graph.add_node("ancient_knowledge_router", self.orchestrator.nodes.ancient_knowledge_router)
         graph.add_node("ancient_knowledge", self.orchestrator.nodes.ancient_knowledge)
         graph.add_node("allopathy_agent", self.orchestrator.nodes.allopathy_agent)
         graph.add_node("emergency_response", self.orchestrator.nodes.emergency_response)
@@ -70,7 +71,7 @@ class GraphBuilder:
         """Add conditional edges with routing logic to the graph."""
         graph.add_conditional_edges(
             "input_guardrail",
-            self.orchestrator.edges.route_input_guardrail,
+            self.orchestrator.conditional_edges.route_input_guardrail,
             {
                 "emergency_response": "emergency_response",
                 "ensure_details": "ensure_details",
@@ -79,18 +80,18 @@ class GraphBuilder:
         )
         graph.add_conditional_edges(
             "ensure_details",
-            self.orchestrator.edges.route_ensure_details,
+            self.orchestrator.conditional_edges.route_ensure_details,
             {"ancient_knowledge_router": "ancient_knowledge_router", "response": "response"},
         )
 
         graph.add_conditional_edges(
             "ancient_knowledge_router",
-            self.orchestrator.edges.route_ancient_knowledge_router,
-            {"response": "response", "ancient_knowledge": "ancient_knowledge"},
+            self.orchestrator.conditional_edges.route_ancient_knowledge_router,
+            {"ancient_knowledge": "ancient_knowledge", "response": "response"},
         )
 
         graph.add_conditional_edges(
             "contraindication_check",
-            self.orchestrator.edges.route_contraindication_check,
+            self.orchestrator.conditional_edges.route_contraindication_check,
             {"adjustment_node": "adjustment_node", "response_generator": "response_generator"},
         )

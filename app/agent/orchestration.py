@@ -10,12 +10,12 @@ if TYPE_CHECKING:
     from config.state import UserProfile
 
 from agent.graph_builder import GraphBuilder
-from agent.graph_edges import Edges
-from app.agent.graph_nodes import Nodes
-from app.utils.logger import configure_logging
+from agent.graph_edges import ConditionalEdges
+from agent.graph_nodes import Nodes
 from config.state import Context, SessionState, UserProfile
 from core.llm import LLMClient
 from memory.postgres import PostgresClient
+from utils.logger import configure_logging
 
 configure_logging()
 LOGGER = logging.getLogger("agent")
@@ -27,13 +27,14 @@ class Orchestrator:
         self.llm_client = llm_client
         self.postgres_client = postgres_client
         self.nodes = Nodes(llm_client)
-        self.edges = Edges()
+        self.conditional_edges = ConditionalEdges()
 
         self.graph_builder = GraphBuilder(self)
         self.graph = self.graph_builder.build()
 
     async def load_state_memory(self, session_id: str) -> SessionState:
         """Load state memory from Postgres."""
+        await self.postgres_client.create_tables()
         state = await self.postgres_client.get_state(session_id)
         if state:
             return state
@@ -80,10 +81,3 @@ class Orchestrator:
         except Exception as e:
             LOGGER.exception("Orchestrator failed.")
             raise RuntimeError(f"Orchestrator failed: {e}") from e
-
-
-if __name__ == "__main__":
-    orchestrator = Orchestrator(LLMClient())
-    graph = orchestrator.graph
-    mermaid_code = graph.get_graph().draw_mermaid()
-    print(mermaid_code)

@@ -8,15 +8,15 @@ from langgraph.types import Send
 if TYPE_CHECKING:
     pass
 
-from app.utils.logger import configure_logging
 from config.state import SessionState
+from utils.logger import configure_logging
 
 configure_logging()
 LOGGER = logging.getLogger("agent_edges")
 LOGGER.setLevel(logging.INFO)
 
 
-class Edges:
+class ConditionalEdges:
     """Container for all edge routing functions."""
 
     @staticmethod

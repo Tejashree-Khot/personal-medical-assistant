@@ -4,9 +4,10 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from app.utils.logger import configure_logging, load_prompt, parse_json_response
 from config.state import SessionState, UserProfile
 from core.llm import LLMClient
+from utils.helper import load_prompt, parse_json_response
+from utils.logger import configure_logging
 
 configure_logging()
 LOGGER = logging.getLogger("nodes")
@@ -134,7 +135,7 @@ class EmergencyResponseNode(AgentNode):
 
 
 class GeneralAgentNode(AgentNode):
-    prompt = load_prompt("general_agent.md")
+    prompt = load_prompt("2_general_agent.md")
 
     async def run(self, state: SessionState) -> SessionState:
         """Handles casual/general queries."""
@@ -161,6 +162,12 @@ class EnsureDetailsNode(AgentNode):
         state.has_sufficient_details = parsed_response.get("has_sufficient_details", False)
         state.response = parsed_response.get("response", "")
         self.update_conversation_history(state, state.user_input, state.response)
+        return state
+
+
+class AncientKnowledgeRouterNode(AgentNode):
+    async def run(self, state: SessionState) -> SessionState:
+        """Routes to ancient knowledge or response."""
         return state
 
 
@@ -341,6 +348,7 @@ class Nodes:
         self.emergency_response = EmergencyResponseNode(llm_client).run
         self.general_agent = GeneralAgentNode(llm_client).run
         self.ensure_details = EnsureDetailsNode(llm_client).run
+        self.ancient_knowledge_router = AncientKnowledgeRouterNode(llm_client).run
         self.ancient_knowledge = AncientKnowledgeNode(llm_client).run
         self.allopathy_agent = AllopathyAgentNode(llm_client).run
         self.tcm_kampo_agent = TCMKampoAgentNode(llm_client).run

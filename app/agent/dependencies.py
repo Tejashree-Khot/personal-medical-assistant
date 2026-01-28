@@ -16,9 +16,7 @@ def get_llm_client() -> LLMClient:
 @lru_cache
 def get_postgres_client() -> PostgresClient:
     """Get the single shared PostgresClient instance."""
-    client = PostgresClient()
-    client.create_tables()
-    return client
+    return PostgresClient
 
 
 @lru_cache
