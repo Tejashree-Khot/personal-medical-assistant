@@ -1,6 +1,5 @@
 """Agent Orchestrator logic."""
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -53,40 +52,20 @@ class Orchestrator:
         """Save user profile to Postgres."""
         await self.postgres_client.save_user_profile(profile)
 
-    async def run_profile_extraction_background(self, state: SessionState) -> None:
-        """Run profile extraction in background."""
-        try:
-            # Create a copy to avoid side effects and clear response for input-only extraction
-            extraction_state = state.model_copy(deep=True)
-
-            LOGGER.info("Starting background profile extraction")
-            state = await self.nodes.profile_extractor(extraction_state)
-            LOGGER.info("Background profile extraction completed.")
-
-            await self.save_user_profile(state.user_profile)
-            LOGGER.info("Background profile extraction completed and saved.")
-
-        except Exception as e:
-            LOGGER.error(f"Background profile extraction failed: {e}")
-
     async def run(self, session_id: str, user_id: str, user_input: str) -> dict:
         """Run the orchestrator."""
         LOGGER.info("Orchestrator started.")
         config: RunnableConfig = {"configurable": {"thread_id": session_id}}
         state = await self.load_state_memory(session_id)
         LOGGER.info("Loaded state memory")
+        user_profile = await self.load_user_profile(user_id)
+        LOGGER.info("Loaded user profile from database")
+
         state.user_input = user_input
         state.user_id = user_id
-
-        user_profile = await self.load_user_profile(user_id)
         state.user_profile = user_profile or UserProfile(user_id=user_id)
-        LOGGER.info("Loaded user profile")
 
         try:
-            # Start background profile extraction
-            LOGGER.info("Starting background profile extraction")
-            asyncio.create_task(self.run_profile_extraction_background(state))
-
             context = Context()
             state_dict = await self.graph.ainvoke(
                 state.model_dump(), config, runtime=Runtime(context=context), stream_mode="values"
