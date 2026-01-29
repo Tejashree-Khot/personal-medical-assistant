@@ -1,129 +1,142 @@
-# LangGraph Orchestration Flow - Mermaid Diagram
+# LangGraph Orchestration Flow
 
 ## Orchestration Graph
 
 ```mermaid
----
-config:
-  flowchart:
-    curve: linear
----
-%%{init: {'theme': 'neutral'}}%%
 graph TD
-    START([START]) -->|input_guardrail| input_guardrail{Input Guardrail}
+    START([START]) --> input_guardrail{Input Guardrail}
 
     %% Input routing
     input_guardrail -->|General query| general_agent[General Agent]
-    input_guardrail -->|Medical Query| medical_router[Medical Router]
+    input_guardrail -->|Medical query| medical_router{Medical Router}
 
-    %%Medical routing
-    medical_router -->|Emergency detected | emergency_medical_agent[Emergency Medical Agent]
-    medical_router --> ensure_details[Ensure Details]
+    %% Medical routing
+    medical_router -->|Emergency detected| emergency_medical_agent[Emergency Medical Agent]
+    medical_router -->|Standard query| ensure_details{Ensure Details}
 
     %% General Agent
-    general_agent --> response
+    general_agent --> response[Response]
 
-    %% Profile and details
-    ensure_details -->|request more details| response
-    ensure_details -->|sufficient details| ancient_knowledge_router{Is Ancient Knowledge <br/> Collected?}
+    %% Details verification
+    ensure_details -->|Missing details| response
+    ensure_details -->|Sufficient details| ancient_knowledge_router{Ancient Knowledge Router}
 
-    %% Supervisor routing
-    ancient_knowledge_router -->|Bypass if ancient knowledge <br/> is already collected | medical_agent
-    ancient_knowledge_router -->|collect ancient knowledge <br/> only once | ancient_knowledge{Ancient Knowledge}
+    %% Ancient knowledge routing
+    ancient_knowledge_router -->|Already collected| medical_agent[Medical Agent]
+    ancient_knowledge_router -->|Not collected| ancient_knowledge[Ancient Knowledge]
 
-    %% Knowledge agents
-    ancient_knowledge --> allopathy_specialist[Allopathy Specialist]
-    ancient_knowledge --> ayurveda_specialist[Ayurveda Specialist]
-    ancient_knowledge --> tcm_kampo_specialist[TCM/Kampo Specialist]
-    ancient_knowledge --> lifestyle_specialist[Lifestyle Specialist]
+    %% Specialist agents - parallel execution
+    ancient_knowledge --> allopathy_agent[Allopathy Agent]
+    ancient_knowledge --> ayurveda_agent[Ayurveda Agent]
+    ancient_knowledge --> tcm_kampo_agent[TCM/Kampo Agent]
+    ancient_knowledge --> lifestyle_agent[Lifestyle Agent]
 
     %% Synthesis
-    allopathy_specialist --> synthesizer[Synthesizer]
-    ayurveda_specialist --> synthesizer
-    tcm_kampo_specialist --> synthesizer
-    lifestyle_specialist --> synthesizer
+    allopathy_agent --> synthesis_and_safety[Synthesis and Safety]
+    ayurveda_agent --> synthesis_and_safety
+    tcm_kampo_agent --> synthesis_and_safety
+    lifestyle_agent --> synthesis_and_safety
 
-    %% Safety & adjustments
+    %% Final responses
     emergency_medical_agent --> response
     medical_agent --> response
-    synthesizer --> response
+    synthesis_and_safety --> response
 
-    %% Response generation
+    %% End
     response --> END([END])
-
-    %% Styling
-    classDef processNode fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef decisionNode fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef startEndNode fill:#c8e6c9,stroke:#1b5e20,stroke-width:3px
-
-    class general_agent,allopathy_agent,ayurveda_agent,tcm_kampo_agent,lifestyle_agent processNode
-    class load_profile,ensure_details,ancient_knowledge_router,ancient_knowledge,synthesis_node,contraindication_check,adjustment_node,medical_agent processNode
-    class input_guardrail,ancient_knowledge_router,ancient_knowledge,contraindication_check decisionNode
-    class START,END startEndNode
 ```
 
 ## Flow Description
 
-### Phase 1: Input and Safety
+### Phase 1: Input Guardrail
 
-- **START** → `input_guardrail`: Analyzes input for safety and appropriateness.
-  - **Unsafe/Inappropriate** → `response` → **END**: Direct response for filtered content.
-  - **General Query** → `general_agent` → `response` → **END**: Handles non-medical, casual conversation.
-  - **Medical Query** → `load_profile`: Proceeds to load user context.
+- **START** → `input_guardrail`: Analyzes input for safety and classifies query type.
+  - Sets `is_medical` and `is_emergency` flags in state.
+  - **General Query** → `general_agent` → `response` → **END**: Handles non-medical conversation.
+  - **Medical Query** → `medical_router`: Proceeds to medical routing.
 
-### Phase 2: Profile Loading and Detail Verification
+### Phase 2: Medical Routing
 
-- `load_profile`: Retrieves user profile and conversation history.
-- `load_profile` → `ensure_details`: Validates if sufficient information exists to answer the medical query.
+- `medical_router`: Routes based on emergency status (pass-through node, routing handled by conditional edges).
+  - **Emergency Detected** (`is_emergency=True`) → `emergency_medical_agent` → `response` → **END**: Immediate emergency guidance.
+  - **Standard Query** → `ensure_details`: Proceeds to detail verification.
+
+### Phase 3: Ensure Details
+
+- `ensure_details`: Validates if sufficient information exists to answer the medical query.
+  - Sets `has_sufficient_details` and `requested_details` in state.
   - **Missing Critical Data** → `response` → **END**: Requests clarification from the user.
-  - **Data Sufficient** → `medical_supervisor`: Proceeds to medical orchestration.
+  - **Data Sufficient** → `ancient_knowledge_router`: Proceeds to knowledge collection routing.
 
-### Phase 3: Medical Supervisor
+### Phase 4: Ancient Knowledge Collection
 
-- `medical_supervisor`: Orchestrates the medical consultation flow and determines the approach.
-  - **Direct Response Needed** → `response` → **END**: Provides immediate response for simple queries.
-  - **Comprehensive Analysis Required** → `ancient_knowledge`: Triggers specialist agents.
+- `ancient_knowledge_router`: Routes based on whether ancient knowledge has been collected (pass-through node).
+  - **Already Collected** (`gathered_ancient_knowledge=True`) → `medical_agent` → `response` → **END**: Direct medical response for follow-up queries.
+  - **Not Collected** → `ancient_knowledge`: Triggers parallel specialist execution.
 
-### Phase 4: Specialist Agents (Parallel Execution)
-
-- `ancient_knowledge`: Coordinates parallel execution of specialist agents to gather diverse medical perspectives:
-  - `allopathy_agent`: Conventional medicine and evidence-based guidelines (uses PubMed RAG).
-  - `tcm_kampo_agent`: Traditional Chinese Medicine and Kampo herbal medicine (uses Kampo DB).
+- `ancient_knowledge`: Coordinates parallel execution of specialist agents:
+  - `allopathy_agent`: Western medicine and evidence-based guidelines.
   - `ayurveda_agent`: Ayurvedic principles and holistic remedies.
-  - `lifestyle_agent`: Nutrition and lifestyle recommendations (uses Nutrition API).
-- All specialist agents converge at `synthesis_node`.
+  - `tcm_kampo_agent`: Traditional Chinese Medicine and Kampo herbal medicine.
+  - `lifestyle_agent`: Nutrition and lifestyle recommendations.
 
-### Phase 5: Synthesis and Safety Validation
+- Each specialist stores its response in state (`allopathy_response`, `ayurveda_response`, `tcm_response`, `lifestyle_response`).
 
-- `synthesis_node`: Aggregates insights from all specialist agents into a cohesive draft response.
-- `synthesis_node` → `contraindication_check`: Safety Layer - validates interactions between recommendations (e.g., Western medications vs. herbal supplements, dietary restrictions).
-  - **Risk Detected** → `adjustment_node` → `response_generator`: Refines recommendations to eliminate safety risks.
-  - **Safe** → `response_generator`: Proceeds directly to response generation.
+### Phase 5: Synthesis and Safety
 
-### Phase 6: Response Generation and Memory Update
+- `synthesis_and_safety`: Aggregates insights from all specialist agents into a cohesive response.
+  - Combines specialist outputs.
+  - Validates drug-herb-food interactions and safety conflicts.
+  - Generates final comprehensive response.
 
-- `response_generator`: Formats the final comprehensive response for the user.
-- `response_generator` → `profile_extractor`: Extracts and updates user profile with new health data or preferences learned during the session.
-- `profile_extractor` → `response`: Prepares final response.
+### Phase 6: Response
+
+- `response`: Final output node that returns `state.response` to the user.
 - `response` → **END**: Delivers response to user.
 
-### Nodes
+## Nodes
 
-| Node | Type | Description |
-|------|------|-------------|
-| `input_guardrail` | Safety | Filters unsafe content and routes based on query type. |
-| `general_agent` | Agent | Handles casual/general non-medical queries. |
-| `load_profile` | Memory | Retrieves user history and health profile. |
-| `ensure_details` | Decision | Validates if sufficient information exists to proceed with medical consultation. |
-| `medical_supervisor` | Orchestrator | Decides if direct response is needed or if specialist agents should run. |
-| `ancient_knowledge` | Orchestrator | Coordinates parallel execution of specialist medical agents. |
-| `allopathy_agent` | Specialist | Western medicine expert with evidence-based guidelines. |
-| `tcm_kampo_agent` | Specialist | Traditional Chinese Medicine and Kampo herbal medicine expert. |
-| `ayurveda_agent` | Specialist | Ayurvedic medicine and holistic health expert. |
-| `lifestyle_agent` | Specialist | Lifestyle, nutrition, and wellness expert. |
-| `synthesis_node` | Logic | Combines specialist outputs into a cohesive draft response. |
-| `contraindication_check` | Safety | Validates drug-herb-food interactions and safety conflicts. |
-| `adjustment_node` | Logic | Modifies response to resolve safety conflicts identified by contraindication check. |
-| `response_generator` | Output | Formats final comprehensive response for the user. |
-| `profile_extractor` | Memory | Extracts and updates persistent user profile with new health data. |
-| `response` | Output | Final response node that delivers output to the user. |
+| Node                       | Type         | Description                                                    |
+|----------------------------|--------------|----------------------------------------------------------------|
+| `input_guardrail`          | Safety       | Filters unsafe content, classifies medical vs general queries. |
+| `general_agent`            | Agent        | Handles non-medical, casual conversation.                      |
+| `medical_router`           | Router       | Pass-through node; routing handled by conditional edges.       |
+| `emergency_medical_agent`  | Agent        | Handles emergency medical queries with immediate guidance.     |
+| `ensure_details`           | Decision     | Validates if sufficient information exists to proceed.         |
+| `ancient_knowledge_router` | Router       | Routes based on ancient knowledge collection status.           |
+| `ancient_knowledge`        | Orchestrator | Triggers parallel execution of specialist agents.              |
+| `allopathy_agent`          | Specialist   | Western medicine expert with evidence-based guidelines.        |
+| `ayurveda_agent`           | Specialist   | Ayurvedic medicine and holistic health expert.                 |
+| `tcm_kampo_agent`          | Specialist   | Traditional Chinese Medicine and Kampo expert.                 |
+| `lifestyle_agent`          | Specialist   | Lifestyle, nutrition, and wellness expert.                     |
+| `medical_agent`            | Agent        | Handles standard medical queries after specialists have run.   |
+| `synthesis_and_safety`     | Logic        | Combines specialist outputs and validates safety.              |
+| `response`                 | Output       | Final response node that delivers output to the user.          |
+
+## State Fields
+
+| Field                        | Type          | Description                                     |
+|------------------------------|---------------|-------------------------------------------------|
+| `session_id`                 | `str`         | Session identifier.                             |
+| `user_id`                    | `str`         | User identifier.                                |
+| `user_input`                 | `str`         | Current user input.                             |
+| `is_emergency`               | `bool`        | Emergency flag set by input guardrail.          |
+| `is_medical`                 | `bool`        | Medical query flag set by input guardrail.      |
+| `has_sufficient_details`     | `bool`        | Details sufficiency flag set by ensure_details. |
+| `requested_details`          | `str`         | Details request message when insufficient.      |
+| `gathered_ancient_knowledge` | `bool`        | Ancient knowledge collection status.            |
+| `allopathy_response`         | `str`         | Allopathy specialist response.                  |
+| `ayurveda_response`          | `str`         | Ayurveda specialist response.                   |
+| `tcm_response`               | `str`         | TCM/Kampo specialist response.                  |
+| `lifestyle_response`         | `str`         | Lifestyle specialist response.                  |
+| `safety_warnings`            | `list[str]`   | Safety warnings from synthesis.                 |
+| `response`                   | `str`         | Final response to user.                         |
+| `conversation_history`       | `list[dict]`  | Conversation context.                           |
+| `user_profile`               | `UserProfile` | User profile data.                              |
+
+## Source Files
+
+- `app/agent/graph_builder.py` - Graph structure definition.
+- `app/agent/graph_nodes.py` - Node implementations.
+- `app/agent/graph_edges.py` - Conditional routing logic.
+- `app/config/state.py` - SessionState model.

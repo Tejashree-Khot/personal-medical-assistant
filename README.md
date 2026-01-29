@@ -2,9 +2,9 @@
 
 ## Overview
 
-The **Personalized Medical Assistant** is an advanced AI assistant designed to provide comprehensive, personalized medical advice. It uniquely bridges the gap between modern Western medicine (Allopathy) and traditional healing systems (Ayurveda, TCM/Kampo), while integrating lifestyle and nutritional guidance.
+The **Personalized Medical Assistant** is an advanced AI system that delivers comprehensive, tailored health guidance by bridging modern Western medicine (Allopathy) with traditional healing systems (Ayurveda, TCM/Kampo) and lifestyle recommendations.
 
-Crucially, the system implements a safety layer—a rigorous contraindication check that ensures traditional remedies (e.g., herbal supplements) do not negatively interact with modern prescriptions or specific patient conditions (e.g., hypertension).
+It ensures **safety and relevance** through input guardrails, contraindication checks, and a persistent user health profile, preventing adverse interactions between treatments. Powered by **LangGraph**, it orchestrates parallel specialist agents to generate **accurate, personalized, and safe responses**.
 
 ## Getting Started
 
@@ -52,31 +52,51 @@ uv run streamlit run scripts/chatbot.py
 
 The UI will be available at `http://localhost:8501`.
 
-## Key Features
+## Orchestration
 
-- **Multi-Perspective Analysis**: Aggregates insights from:
-  - **Allopathy Agent**: Evidence-based modern medicine guidelines.
-  - **Ayurveda Agent**: Ancient Indian holistic healing principles.
-  - **TCM/Kampo Agent**: Traditional Chinese and Japanese herbal medicine.
-  - **Lifestyle Agent**: Nutrition, exercise, and daily routine recommendations.
-- **Safety First Architecture**:
-  - **Input Guardrails**: Detects emergencies and blocks unsafe content immediately.
-  - **Contraindication Check**: Cross-references all recommendations against the user's health profile to prevent adverse interactions.
-- **Personalized Health Profile**: Maintains a persistent user profile (medical history, allergies, location) to tailor advice (e.g., regional diet plans).
-- **Orchestrated Workflow**: Uses **LangGraph** to manage complex decision-making flows, ensuring data sufficiency before generating responses.
+```mermaid
+graph TD
+    START([START]) --> input_guardrail{Input Guardrail}
 
-## Architecture
+    %% Input routing
+    input_guardrail -->|General query| general_agent[General Agent]
+    input_guardrail -->|Medical query| medical_router{Medical Router}
 
-The system follows a multi-phase orchestration flow:
+    %% Medical routing
+    medical_router -->|Emergency detected| emergency_medical_agent[Emergency Medical Agent]
+    medical_router -->|Standard query| ensure_details{Ensure Details}
 
-1. **Input & Safety**: Triage for emergencies.
-2. **Routing**: Classifies queries as General or Medical.
-3. **Medical Orchestration**: Gathers missing critical data from the user.
-4. **Parallel Execution**: Specialist agents run concurrently to generate diverse insights.
-5. **Synthesis & Safety**: Merges insights and runs the interaction check.
-6. **Response & Memory**: Delivers the final safe response and updates the user profile.
+    %% General Agent
+    general_agent --> response[Response]
 
-For a detailed visual representation, see [Orchestration Flow](docs/orchestration.md).
+    %% Details verification
+    ensure_details -->|Missing details| response
+    ensure_details -->|Sufficient details| ancient_knowledge_router{Ancient Knowledge Router}
+
+    %% Ancient knowledge routing
+    ancient_knowledge_router -->|Already collected| medical_agent[Medical Agent]
+    ancient_knowledge_router -->|Not collected| ancient_knowledge[Ancient Knowledge]
+
+    %% Specialist agents - parallel execution
+    ancient_knowledge --> allopathy_agent[Allopathy Agent]
+    ancient_knowledge --> ayurveda_agent[Ayurveda Agent]
+    ancient_knowledge --> tcm_kampo_agent[TCM/Kampo Agent]
+    ancient_knowledge --> lifestyle_agent[Lifestyle Agent]
+
+    %% Synthesis
+    allopathy_agent --> synthesis_and_safety[Synthesis and Safety]
+    ayurveda_agent --> synthesis_and_safety
+    tcm_kampo_agent --> synthesis_and_safety
+    lifestyle_agent --> synthesis_and_safety
+
+    %% Final responses
+    emergency_medical_agent --> response
+    medical_agent --> response
+    synthesis_and_safety --> response
+
+    %% End
+    response --> END([END])
+```
 
 ## Tech Stack
 
