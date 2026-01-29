@@ -30,7 +30,6 @@ class GraphBuilder:
 
     def _add_nodes(self, graph: StateGraph) -> None:
         """Add all nodes to the graph."""
-        graph.add_node("profile_extractor", self.orchestrator.nodes.profile_extractor)
         graph.add_node("input_guardrail", self.orchestrator.nodes.input_guardrail)
         graph.add_node("response", self.orchestrator.nodes.response)
         graph.add_node("general_agent", self.orchestrator.nodes.general_agent)
@@ -46,8 +45,7 @@ class GraphBuilder:
 
     def _add_edges(self, graph: StateGraph) -> None:
         """Add static edges to the graph."""
-        graph.add_edge(START, "profile_extractor")
-        graph.add_edge("profile_extractor", "input_guardrail")
+        graph.add_edge(START, "input_guardrail")
         graph.add_edge("ancient_knowledge", "allopathy_agent")
         graph.add_edge("ancient_knowledge", "tcm_kampo_agent")
         graph.add_edge("ancient_knowledge", "ayurveda_agent")

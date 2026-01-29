@@ -9,7 +9,7 @@ class LLMClient:
             model=settings.LLM_MODEL_NAME, api_key=settings.GROQ_API_KEY, temperature=0.0
         )
 
-    async def ainvoke(self, messages):
+    async def ainvoke(self, messages: list[dict[str, str]]) -> str:
         """Invoke the LLM with messages.
 
         Args:

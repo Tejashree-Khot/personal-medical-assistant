@@ -25,9 +25,6 @@ services:
       - ./:/app
     environment:
       PYTHONPATH: /app
-      SERVICE_HOST: "0.0.0.0"
-      SERVICE_PORT: 8080
-      DEV: "true"
       # GROQ Configuration
       GROQ_API_KEY: ${GROQ_API_KEY}
       # LangSmith Configuration

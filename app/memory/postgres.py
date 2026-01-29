@@ -7,8 +7,9 @@ from langgraph.store.postgres import AsyncPostgresStore
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
+from config.profile_schema import UserProfile
 from config.settings import settings
-from config.state import SessionState, UserProfile
+from config.state import SessionState
 
 
 def get_postgres_connection_string() -> str:

@@ -4,12 +4,14 @@ from pydantic import BaseModel
 
 
 class UserInput(BaseModel):
+    """User input schema."""
+
     session_id: str
     user_id: str
     user_input: str
 
 
-class InputGuardrailResult(BaseModel):
+class GuardrailResult(BaseModel):
     """Result of input guardrail."""
 
     is_emergency: bool

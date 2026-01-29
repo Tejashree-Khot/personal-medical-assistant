@@ -10,4 +10,4 @@ Analyze the conversation to extract any new health information that should be ad
 
 # Input
 User input: {user_input}
-Current profile: {current_profile}
+Current profile: {user_profile}

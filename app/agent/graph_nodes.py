@@ -1,6 +1,5 @@
 """Orchestrator nodes."""
 
-import json
 import logging
 from abc import ABC
 from typing import Any
@@ -8,8 +7,8 @@ from typing import Any
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel
 
-from config.schemas import AgentResponse, EnsureDetailsResult, InputGuardrailResult
-from config.state import ProfileUpdate, SessionState, UserProfile
+from config.node_schemas import AgentResponse, EnsureDetailsResult, GuardrailResult
+from config.state import SessionState
 from core.llm import LLMClient
 from utils.helper import load_prompt
 from utils.logger import configure_logging
@@ -38,10 +37,10 @@ class AgentNode(BaseNode):
     system_prompt_template = load_prompt("system_prompt.md")
     output_schema: type[BaseModel] | None = None
 
-    def __init__(self, model: LLMClient) -> None:
-        self.model = model.model
+    def __init__(self, llm_client: LLMClient) -> None:
+        self.model = llm_client.model
         if self.output_schema:
-            self.structured_llm = self.model.with_structured_output(self.output_schema)
+            self.structured_llm = llm_client.model.with_structured_output(self.output_schema)
 
     def prepare_system_prompt(self, state: SessionState) -> str:
         """Prepare system prompt with user profile context."""
@@ -107,7 +106,7 @@ class InputGuardrailNode(AgentNode):
     """Analyzes input for safety and emergency signals."""
 
     prompt = load_prompt("1_input_guardrail.md")
-    output_schema = InputGuardrailResult
+    output_schema = GuardrailResult
 
     async def run(self, state: SessionState) -> SessionState:
         """Analyzes input for safety and emergency signals."""
@@ -171,12 +170,13 @@ class SpecialistAgentNode(AgentNode):
 
     def __init__(self, model: LLMClient, agent_name: str) -> None:
         super().__init__(model)
+        self.agent_name = agent_name
         self.prompt = load_prompt(f"4_{agent_name}.md")
         self.response_field = self.AGENT_RESPONSE_FIELDS.get(agent_name, "response")
 
     async def run(self, state: SessionState) -> SessionState:
         """Runs specialist agent and stores response in the appropriate field."""
-        LOGGER.info("SpecialistAgentNode: Running specialist agent")
+        LOGGER.info("SpecialistAgentNode: Running specialist agent %s", self.agent_name)
         prompt_kwargs = {
             "user_input": state.user_input,
             "user_profile": self.get_safe_user_profile(state),
@@ -206,61 +206,6 @@ class SynthesisAndSafetyNode(AgentNode):
         return await self.run_structured_node(state, prompt_kwargs=prompt_kwargs)
 
 
-class ProfileExtractorNode(AgentNode):
-    """Extracts and updates user profile from conversation."""
-
-    prompt = load_prompt("profile_extractor.md")
-    output_schema = ProfileUpdate
-
-    @staticmethod
-    def _clean_updates(d: dict[str, Any]) -> dict[str, Any]:
-        """Recursively removes empty values from a dictionary."""
-        cleaned = {}
-        for k, v in d.items():
-            if isinstance(v, dict):
-                nested = ProfileExtractorNode._clean_updates(v)
-                if nested:
-                    cleaned[k] = nested
-            elif v not in [None, "", [], {}]:
-                cleaned[k] = v
-        return cleaned
-
-    @staticmethod
-    def update_profile(state: SessionState, updates: dict[str, Any]) -> SessionState:
-        """Updates user profile with cleaned values."""
-        profile_dict = state.user_profile.model_dump()
-        cleaned_updates = ProfileExtractorNode._clean_updates(updates)
-
-        for key, value in cleaned_updates.items():
-            if key not in profile_dict or key == "user_id":
-                LOGGER.warning(f"Attempted to set invalid UserProfile field: {key}")
-                continue
-            if isinstance(profile_dict[key], dict) and isinstance(value, dict):
-                profile_dict[key].update(value)
-            else:
-                profile_dict[key] = value
-        state.user_profile = UserProfile(**profile_dict)
-        return state
-
-    async def run(self, state: SessionState) -> SessionState:
-        """Updates persistent user profile."""
-        LOGGER.info("ProfileExtractorNode: Updating user profile")
-        if not state.user_profile:
-            return state
-        prompt_kwargs = {
-            "user_input": state.user_input,
-            "current_profile": json.dumps(
-                state.user_profile.model_dump(exclude_none=True, exclude={"user_id"})
-            ),
-        }
-        prompt_text = self.prompt.format(**prompt_kwargs)
-        prompt = self.prepare_prompt(state, prompt_text)
-        chain = prompt | self.structured_llm
-        response: ProfileUpdate = await chain.ainvoke(prompt_kwargs)
-        updates = response.model_dump(exclude_none=True)
-        return self.update_profile(state, updates)
-
-
 class ResponseNode(BaseNode):
     async def run(self, state: SessionState) -> dict[str, Any]:  # noqa: PLR6301
         return {"response": state.response}
@@ -281,5 +226,4 @@ class Nodes:
         self.lifestyle_agent = SpecialistAgentNode(llm_client, "lifestyle_agent").run
         self.tcm_kampo_agent = SpecialistAgentNode(llm_client, "tcm_kampo_agent").run
         self.synthesis_and_safety = SynthesisAndSafetyNode(llm_client).run
-        self.profile_extractor = ProfileExtractorNode(llm_client).run
         self.response = ResponseNode().run

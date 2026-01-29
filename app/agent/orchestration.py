@@ -7,7 +7,8 @@ from langchain_core.runnables import RunnableConfig
 from agent.graph_builder import GraphBuilder
 from agent.graph_edges import ConditionalEdges
 from agent.graph_nodes import Nodes
-from config.state import SessionState, UserProfile
+from config.profile_schema import UserProfile
+from config.state import SessionState
 from core.llm import LLMClient
 from memory.postgres import PostgresClient
 from utils.logger import configure_logging
@@ -41,10 +42,6 @@ class Orchestrator:
         """Load user profile from Postgres."""
         return await self.postgres_client.get_user_profile(user_id)
 
-    async def save_user_profile(self, profile: UserProfile) -> None:
-        """Save user profile to Postgres."""
-        await self.postgres_client.save_user_profile(profile)
-
     async def run(self, session_id: str, user_id: str, user_input: str) -> dict:
         """Run the orchestrator."""
         LOGGER.info("Orchestrator started.")
@@ -64,8 +61,6 @@ class Orchestrator:
 
             state_from_result = SessionState(**state_dict)
             await self.save_state_memory(state_from_result)
-            if state_from_result.user_profile:
-                await self.save_user_profile(state_from_result.user_profile)
 
             return state_from_result.model_dump()
 

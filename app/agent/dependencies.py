@@ -3,6 +3,7 @@
 from functools import lru_cache
 
 from agent.orchestration import Orchestrator
+from agent.profile_extractor import ProfileExtractor
 from core.llm import LLMClient
 from memory.postgres import PostgresClient
 
@@ -27,3 +28,9 @@ def get_orchestrator() -> Orchestrator:
     is reused across requests, allowing session state to persist.
     """
     return Orchestrator(llm_client=get_llm_client(), postgres_client=get_postgres_client())
+
+
+@lru_cache
+def get_profile_extractor() -> ProfileExtractor:
+    """Get the single shared ProfileExtractor instance."""
+    return ProfileExtractor(llm_client=get_llm_client(), postgres_client=get_postgres_client())
