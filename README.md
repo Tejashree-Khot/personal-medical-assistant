@@ -78,16 +78,16 @@ graph TD
     ancient_knowledge_router -->|Not collected| ancient_knowledge[Ancient Knowledge]
 
     %% Specialist agents - parallel execution
-    ancient_knowledge --> allopathy_agent[Allopathy Agent]
-    ancient_knowledge --> ayurveda_agent[Ayurveda Agent]
-    ancient_knowledge --> tcm_kampo_agent[TCM/Kampo Agent]
-    ancient_knowledge --> lifestyle_agent[Lifestyle Agent]
+    ancient_knowledge --> allopathy_specialist[Allopathy Specialist]
+    ancient_knowledge --> ayurveda_specialist[Ayurveda Specialist]
+    ancient_knowledge --> tcm_kampo_specialist[TCM/Kampo Specialist]
+    ancient_knowledge --> lifestyle_specialist[Lifestyle Specialist]
 
     %% Synthesis
-    allopathy_agent --> synthesis_and_safety[Synthesis and Safety]
-    ayurveda_agent --> synthesis_and_safety
-    tcm_kampo_agent --> synthesis_and_safety
-    lifestyle_agent --> synthesis_and_safety
+    allopathy_specialist --> synthesis_and_safety[Synthesis and Safety]
+    ayurveda_specialist --> synthesis_and_safety
+    tcm_kampo_specialist --> synthesis_and_safety
+    lifestyle_specialist --> synthesis_and_safety
 
     %% Final responses
     emergency_medical_agent --> response
