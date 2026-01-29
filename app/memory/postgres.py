@@ -248,11 +248,13 @@ class PostgresClient:
             await conn.execute(
                 """
                 INSERT INTO user_profile (
-                    user_id, name, allergies, ayurveda, biometrics, demographics, diet, health_goals, lifestyle, medical_history, updated_at
+                    user_id, name, allergies, ayurveda, biometrics, demographics, diet, 
+                    health_goals, lifestyle, medical_history, other, updated_at
                 )
                 VALUES (
-                    %(user_id)s, %(name)s, %(allergies)s, %(ayurveda)s::jsonb, %(biometrics)s::jsonb, %(demographics)s::jsonb,
-                    %(diet)s::jsonb, %(health_goals)s::jsonb, %(lifestyle)s::jsonb, %(medical_history)s::jsonb, CURRENT_TIMESTAMP
+                    %(user_id)s, %(name)s, %(allergies)s, %(ayurveda)s::jsonb, %(biometrics)s::jsonb, 
+                    %(demographics)s::jsonb, %(diet)s::jsonb, %(health_goals)s::jsonb, %(lifestyle)s::jsonb, 
+                    %(medical_history)s::jsonb, %(other)s, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT (user_id) DO UPDATE SET
                     name = COALESCE(EXCLUDED.name, user_profile.name),
@@ -264,6 +266,7 @@ class PostgresClient:
                     health_goals = COALESCE(EXCLUDED.health_goals, user_profile.health_goals),
                     lifestyle = COALESCE(EXCLUDED.lifestyle, user_profile.lifestyle),
                     medical_history = COALESCE(EXCLUDED.medical_history, user_profile.medical_history),
+                    other = COALESCE(EXCLUDED.other, user_profile.other),
                     updated_at = CURRENT_TIMESTAMP;
                 """,
                 {

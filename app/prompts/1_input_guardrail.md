@@ -26,15 +26,3 @@ Analyze the user's input and determine:
 
 # Input
 **User message:** {user_input}
-
-# Response Output
-Return **strictly** in the following JSON format. Do not add any other text.
-
-**Output format:**
-
-```json
-{{
-  "is_emergency": true | false,
-  "is_medical": true | false
-}}
-```

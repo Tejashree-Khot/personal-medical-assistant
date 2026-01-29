@@ -64,7 +64,8 @@ class Orchestrator:
 
             state_from_result = SessionState(**state_dict)
             await self.save_state_memory(state_from_result)
-            await self.save_user_profile(state.user_profile)
+            if state_from_result.user_profile:
+                await self.save_user_profile(state_from_result.user_profile)
 
             return state_from_result.model_dump()
 

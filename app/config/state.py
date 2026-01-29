@@ -77,6 +77,21 @@ class UserProfile(BaseModel):
     other: str | None = None
 
 
+class ProfileUpdate(BaseModel):
+    """Profile update information."""
+
+    name: str | None = None
+    allergies: str | None = None
+    ayurveda: Ayurveda | None = None
+    biometrics: Biometrics | None = None
+    demographics: Demographics | None = None
+    diet: Diet | None = None
+    health_goals: HealthGoals | None = None
+    lifestyle: Lifestyle | None = None
+    medical_history: MedicalHistory | None = None
+    other: str | None = None
+
+
 class SessionState(BaseModel):
     """The state of the graph."""
 
