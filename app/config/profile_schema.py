@@ -1,6 +1,12 @@
 from pydantic import BaseModel, Field
 
 
+class Allergies(BaseModel):
+    """Allergies profile information."""
+
+    allergies: list[str] | None = None
+
+
 class Ayurveda(BaseModel):
     """Ayurveda profile information."""
 
@@ -58,13 +64,20 @@ class MedicalHistory(BaseModel):
     supplements: list[str] | None = None
 
 
+class OtherHabbitsAndPreferences(BaseModel):
+    """Habbits and preferences profile information."""
+
+    other_habbits: list[str] | None = None
+    other_preferences: list[str] | None = None
+
+
 class UserProfile(BaseModel):
     """User profile information."""
 
     user_id: str
     name: str | None = None
 
-    allergies: str | None = Field(default=None)
+    allergies: Allergies = Field(default_factory=Allergies)
     ayurveda: Ayurveda = Field(default_factory=Ayurveda)
     biometrics: Biometrics = Field(default_factory=Biometrics)
     demographics: Demographics = Field(default_factory=Demographics)
@@ -72,14 +85,16 @@ class UserProfile(BaseModel):
     health_goals: HealthGoals = Field(default_factory=HealthGoals)
     lifestyle: Lifestyle = Field(default_factory=Lifestyle)
     medical_history: MedicalHistory = Field(default_factory=MedicalHistory)
-    other: str | None = None
+    other_habbits_and_preferences: OtherHabbitsAndPreferences = Field(
+        default_factory=OtherHabbitsAndPreferences
+    )
 
 
 class ProfileUpdate(BaseModel):
     """Profile update information."""
 
     name: str | None = None
-    allergies: str | None = None
+    allergies: Allergies | None = None
     ayurveda: Ayurveda | None = None
     biometrics: Biometrics | None = None
     demographics: Demographics | None = None
@@ -87,4 +102,4 @@ class ProfileUpdate(BaseModel):
     health_goals: HealthGoals | None = None
     lifestyle: Lifestyle | None = None
     medical_history: MedicalHistory | None = None
-    other: str | None = None
+    other_habbits_and_preferences: OtherHabbitsAndPreferences | None = None

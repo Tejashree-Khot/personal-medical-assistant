@@ -21,4 +21,3 @@ Consider if you need to ask for clarification:
 # Guidelines
 - If user has provided sufficient details, set has_sufficient_details to true and response to empty string.
 - If user has not provided sufficient details, set has_sufficient_details to false and response to a message asking for more details.
-

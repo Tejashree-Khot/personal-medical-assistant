@@ -72,7 +72,7 @@ class GraphBuilder:
 
         graph.add_conditional_edges(
             "medical_router",
-            self.orchestrator.conditional_edges.route_medical_agent,
+            self.orchestrator.conditional_edges.route_medical_query,
             {
                 "emergency_medical_agent": "emergency_medical_agent",
                 "ensure_details": "ensure_details",

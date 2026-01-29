@@ -23,24 +23,28 @@ class ConditionalEdges:
     def route_input_guardrail(state: SessionState) -> str:
         """Route based on medical agent check.
 
-        If medical query, go to medical_agent.
+        If medical query, go to medical_router.
         Otherwise, go to general_agent.
         """
         if state.is_medical:
-            return "medical_agent"
+            LOGGER.info("Route input guardrail: medical query")
+            return "medical_router"
         else:
+            LOGGER.info("Route input guardrail: general query")
             return "general_agent"
 
     @staticmethod
-    def route_medical_agent(state: SessionState) -> str:
+    def route_medical_query(state: SessionState) -> str:
         """Route based on medical agent check.
 
-        If emergency detected, go to emergency_response.
+        If emergency detected, go to emergency_medical_agent.
         Otherwise, go to ensure_details.
         """
         if state.is_emergency:
-            return "emergency_response"
+            LOGGER.info("Route medical query: emergency detected")
+            return "emergency_medical_agent"
         else:
+            LOGGER.info("Route medical query: no emergency detected")
             return "ensure_details"
 
     @staticmethod
@@ -51,8 +55,11 @@ class ConditionalEdges:
         Otherwise, go to response.
         """
         if state.has_sufficient_details:
+            LOGGER.info("Route ensure details: sufficient details")
             return "ancient_knowledge_router"
-        return "response"
+        else:
+            LOGGER.info("Route ensure details: insufficient details")
+            return "response"
 
     @staticmethod
     def route_ancient_knowledge_router(state: SessionState) -> str | list[Send]:
@@ -62,5 +69,8 @@ class ConditionalEdges:
         Otherwise, go to response.
         """
         if state.gathered_ancient_knowledge:
+            LOGGER.info("Route ancient knowledge router: ancient knowledge gathered")
             return "ancient_knowledge"
-        return "response"
+        else:
+            LOGGER.info("Route ancient knowledge router: ancient knowledge not gathered")
+            return "response"

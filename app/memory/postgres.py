@@ -113,7 +113,7 @@ class PostgresClient:
                 CREATE TABLE IF NOT EXISTS user_profile (
                     user_id TEXT PRIMARY KEY,
                     name TEXT,
-                    allergies TEXT,
+                    allergies JSONB,
                     ayurveda JSONB,
                     biometrics JSONB,
                     demographics JSONB,
@@ -121,7 +121,7 @@ class PostgresClient:
                     health_goals JSONB,
                     lifestyle JSONB,
                     medical_history JSONB,
-                    other TEXT,
+                    other_habbits_and_preferences JSONB,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -202,13 +202,13 @@ class PostgresClient:
                 """
                 INSERT INTO user_profile (
                     user_id, name, allergies, ayurveda, biometrics, demographics, diet,
-                    health_goals, lifestyle, medical_history, other, updated_at
+                    health_goals, lifestyle, medical_history, other_habbits_and_preferences, updated_at
                 )
                 VALUES (
-                    %(user_id)s, %(name)s, %(allergies)s, %(ayurveda)s::jsonb,
+                    %(user_id)s, %(name)s, %(allergies)s::jsonb, %(ayurveda)s::jsonb,
                     %(biometrics)s::jsonb, %(demographics)s::jsonb, %(diet)s::jsonb,
                     %(health_goals)s::jsonb, %(lifestyle)s::jsonb,
-                    %(medical_history)s::jsonb, %(other)s, CURRENT_TIMESTAMP
+                    %(medical_history)s::jsonb, %(other_habbits_and_preferences)s::jsonb, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT (user_id) DO UPDATE SET
                     name = COALESCE(EXCLUDED.name, user_profile.name),
@@ -220,13 +220,15 @@ class PostgresClient:
                     health_goals = COALESCE(EXCLUDED.health_goals, user_profile.health_goals),
                     lifestyle = COALESCE(EXCLUDED.lifestyle, user_profile.lifestyle),
                     medical_history = COALESCE(EXCLUDED.medical_history, user_profile.medical_history),
-                    other = COALESCE(EXCLUDED.other, user_profile.other),
+                    other_habbits_and_preferences = COALESCE(EXCLUDED.other_habbits_and_preferences, user_profile.other_habbits_and_preferences),
                     updated_at = CURRENT_TIMESTAMP;
                 """,
                 {
                     "user_id": user_profile.user_id,
                     "name": user_profile.name,
-                    "allergies": user_profile.allergies,
+                    "allergies": user_profile.allergies.model_dump_json()
+                    if user_profile.allergies
+                    else None,
                     "ayurveda": user_profile.ayurveda.model_dump_json()
                     if user_profile.ayurveda
                     else None,
@@ -246,7 +248,9 @@ class PostgresClient:
                     "medical_history": user_profile.medical_history.model_dump_json()
                     if user_profile.medical_history
                     else None,
-                    "other": user_profile.other,
+                    "other_habbits_and_preferences": user_profile.other_habbits_and_preferences.model_dump_json()
+                    if user_profile.other_habbits_and_preferences
+                    else None,
                 },
             )
 
