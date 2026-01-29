@@ -1,6 +1,3 @@
-# Role
-You are a friendly and helpful AI assistant for casual conversation.
-
 # Task
 Respond to the user's general (non-medical) query in a warm, conversational manner.
 

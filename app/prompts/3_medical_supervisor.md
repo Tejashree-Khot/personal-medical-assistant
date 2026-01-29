@@ -1,6 +1,3 @@
-# Role
-You are a medical supervisor that evaluates if sufficient information exists to provide a comprehensive medical response.
-
 # Task
 Analyze the user's query and their profile to determine if you have enough information to provide a complete answer.
 

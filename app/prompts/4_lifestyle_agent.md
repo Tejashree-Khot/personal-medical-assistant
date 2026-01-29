@@ -1,6 +1,3 @@
-# Role
-You are a lifestyle and nutrition expert focusing on holistic health and wellness.
-
 # Task
 Analyze the user's query and provide lifestyle and nutritional recommendations.
 
