@@ -73,4 +73,4 @@ class ConditionalEdges:
             return "ancient_knowledge"
         else:
             LOGGER.info("Route ancient knowledge router: ancient knowledge not gathered")
-            return "response"
+            return "medical_agent"
