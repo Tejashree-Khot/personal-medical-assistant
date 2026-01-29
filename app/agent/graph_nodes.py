@@ -31,6 +31,10 @@ class AncientKnowledgeNode(BaseNode):
     """Decides if more info is needed or if specialists should run."""
 
 
+class MedicalRouterNode(BaseNode):
+    """Routes to emergency medical agent or ensure details."""
+
+
 class AgentNode(BaseNode):
     """Base class for nodes that interact with LLM."""
 
@@ -116,10 +120,10 @@ class InputGuardrailNode(AgentNode):
         return await self.run_structured_node(state, prompt_kwargs={"user_input": state.user_input})
 
 
-class EmergencyResponseNode(AgentNode):
+class EmergencyMedicalAgentNode(AgentNode):
     """Handles emergency queries."""
 
-    prompt = load_prompt("2_emergency_response.md")
+    prompt = load_prompt("2_emergency_medical_agent.md")
     output_schema = AgentResponse
 
     async def run(self, state: SessionState) -> SessionState:
@@ -140,10 +144,22 @@ class GeneralAgentNode(AgentNode):
         return await self.run_structured_node(state, prompt_kwargs={"user_input": state.user_input})
 
 
+class MedicalAgentNode(AgentNode):
+    """Handles medical queries."""
+
+    prompt = load_prompt("3_medical_agent.md")
+    output_schema = AgentResponse
+
+    async def run(self, state: SessionState) -> SessionState:
+        """Handles medical queries."""
+        LOGGER.info("MedicalAgentNode: Handling medical queries")
+        return await self.run_structured_node(state, prompt_kwargs={"user_input": state.user_input})
+
+
 class EnsureDetailsNode(AgentNode):
     """Ensures user provides sufficient details."""
 
-    prompt = load_prompt("2_ensure_details.md")
+    prompt = load_prompt("3_ensure_details.md")
     output_schema = EnsureDetailsResult
 
     async def run(self, state: SessionState) -> SessionState:
@@ -216,9 +232,11 @@ class Nodes:
 
     def __init__(self, llm_client: LLMClient) -> None:
         self.input_guardrail = InputGuardrailNode(llm_client).run
-        self.emergency_response = EmergencyResponseNode(llm_client).run
         self.general_agent = GeneralAgentNode(llm_client).run
+        self.emergency_medical_agent = EmergencyMedicalAgentNode(llm_client).run
+        self.medical_router = MedicalRouterNode().run
         self.ensure_details = EnsureDetailsNode(llm_client).run
+        self.medical_agent = MedicalAgentNode(llm_client).run
         self.ancient_knowledge_router = AncientKnowledgeRouterNode().run
         self.ancient_knowledge = AncientKnowledgeNode().run
         self.allopathy_agent = SpecialistAgentNode(llm_client, "allopathy_agent").run

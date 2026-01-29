@@ -31,21 +31,26 @@ class GraphBuilder:
     def _add_nodes(self, graph: StateGraph) -> None:
         """Add all nodes to the graph."""
         graph.add_node("input_guardrail", self.orchestrator.nodes.input_guardrail)
-        graph.add_node("response", self.orchestrator.nodes.response)
         graph.add_node("general_agent", self.orchestrator.nodes.general_agent)
+        graph.add_node("medical_router", self.orchestrator.nodes.medical_router)
+        graph.add_node("emergency_medical_agent", self.orchestrator.nodes.emergency_medical_agent)
         graph.add_node("ensure_details", self.orchestrator.nodes.ensure_details)
         graph.add_node("ancient_knowledge_router", self.orchestrator.nodes.ancient_knowledge_router)
+        graph.add_node("medical_agent", self.orchestrator.nodes.medical_agent)
         graph.add_node("ancient_knowledge", self.orchestrator.nodes.ancient_knowledge)
         graph.add_node("allopathy_agent", self.orchestrator.nodes.allopathy_agent)
-        graph.add_node("emergency_response", self.orchestrator.nodes.emergency_response)
         graph.add_node("tcm_kampo_agent", self.orchestrator.nodes.tcm_kampo_agent)
         graph.add_node("ayurveda_agent", self.orchestrator.nodes.ayurveda_agent)
         graph.add_node("lifestyle_agent", self.orchestrator.nodes.lifestyle_agent)
         graph.add_node("synthesis_and_safety", self.orchestrator.nodes.synthesis_and_safety)
+        graph.add_node("response", self.orchestrator.nodes.response)
 
     def _add_edges(self, graph: StateGraph) -> None:
         """Add static edges to the graph."""
         graph.add_edge(START, "input_guardrail")
+        graph.add_edge("general_agent", "response")
+        graph.add_edge("emergency_medical_agent", "response")
+        graph.add_edge("medical_agent", "response")
         graph.add_edge("ancient_knowledge", "allopathy_agent")
         graph.add_edge("ancient_knowledge", "tcm_kampo_agent")
         graph.add_edge("ancient_knowledge", "ayurveda_agent")
@@ -55,8 +60,6 @@ class GraphBuilder:
         graph.add_edge("ayurveda_agent", "synthesis_and_safety")
         graph.add_edge("lifestyle_agent", "synthesis_and_safety")
         graph.add_edge("synthesis_and_safety", "response")
-        graph.add_edge("general_agent", "response")
-        graph.add_edge("emergency_response", "response")
         graph.add_edge("response", END)
 
     def _add_conditional_edges(self, graph: StateGraph) -> None:
@@ -64,20 +67,26 @@ class GraphBuilder:
         graph.add_conditional_edges(
             "input_guardrail",
             self.orchestrator.conditional_edges.route_input_guardrail,
+            {"medical_router": "medical_router", "general_agent": "general_agent"},
+        )
+
+        graph.add_conditional_edges(
+            "medical_router",
+            self.orchestrator.conditional_edges.route_medical_agent,
             {
-                "emergency_response": "emergency_response",
+                "emergency_medical_agent": "emergency_medical_agent",
                 "ensure_details": "ensure_details",
-                "general_agent": "general_agent",
             },
         )
+
         graph.add_conditional_edges(
             "ensure_details",
             self.orchestrator.conditional_edges.route_ensure_details,
-            {"ancient_knowledge_router": "ancient_knowledge_router", "response": "response"},
+            {"response": "response", "ancient_knowledge_router": "ancient_knowledge_router"},
         )
 
         graph.add_conditional_edges(
             "ancient_knowledge_router",
             self.orchestrator.conditional_edges.route_ancient_knowledge_router,
-            {"ancient_knowledge": "ancient_knowledge", "response": "response"},
+            {"medical_agent": "medical_agent", "ancient_knowledge": "ancient_knowledge"},
         )

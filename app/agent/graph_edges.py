@@ -21,17 +21,27 @@ class ConditionalEdges:
 
     @staticmethod
     def route_input_guardrail(state: SessionState) -> str:
-        """Route based on input guardrail check.
+        """Route based on medical agent check.
 
-        If emergency detected, go to response_node.
-        Otherwise, go to profile_extractor.
+        If medical query, go to medical_agent.
+        Otherwise, go to general_agent.
+        """
+        if state.is_medical:
+            return "medical_agent"
+        else:
+            return "general_agent"
+
+    @staticmethod
+    def route_medical_agent(state: SessionState) -> str:
+        """Route based on medical agent check.
+
+        If emergency detected, go to emergency_response.
+        Otherwise, go to ensure_details.
         """
         if state.is_emergency:
             return "emergency_response"
-        elif state.is_medical:
-            return "ensure_details"
         else:
-            return "general_agent"
+            return "ensure_details"
 
     @staticmethod
     def route_ensure_details(state: SessionState) -> str:

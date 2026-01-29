@@ -13,42 +13,42 @@ graph TD
     START([START]) -->|input_guardrail| input_guardrail{Input Guardrail}
 
     %% Input routing
-    input_guardrail -->|emergency detected| response[Response]
-    input_guardrail -->|general_agent| general_agent[General Agent]
-    input_guardrail -->|ensure_details| ensure_details[Ensure Details]
-    input_guardrail --> profile_extractor[Profile Extractor]
+    input_guardrail -->|General query| general_agent[General Agent]
+    input_guardrail -->|Medical Query| medical_router[Medical Router]
+
+    %%Medical routing
+    medical_router -->|Emergency detected | emergency_medical_agent[Emergency Medical Agent]
+    medical_router --> ensure_details[Ensure Details]
 
     %% General Agent
     general_agent --> response
 
     %% Profile and details
     ensure_details -->|request more details| response
-    ensure_details -->|supervisor_needed| ancient_knowledge_router{Ancient Knowledge Router}
+    ensure_details -->|sufficient details| ancient_knowledge_router{Is Ancient Knowledge <br/> Collected?}
 
     %% Supervisor routing
-    ancient_knowledge_router -->|ancient_knowledge| ancient_knowledge{Ancient Knowledge}
-    ancient_knowledge_router -->|Bypass if already gathered ancient knowledge| response
+    ancient_knowledge_router -->|Bypass if ancient knowledge <br/> is already collected | medical_agent
+    ancient_knowledge_router -->|collect ancient knowledge <br/> only once | ancient_knowledge{Ancient Knowledge}
 
     %% Knowledge agents
-    ancient_knowledge --> allopathy_agent[Allopathy Agent]
-    ancient_knowledge --> ayurveda_agent[Ayurveda Agent]
-    ancient_knowledge --> tcm_kampo_agent[TCM/Kampo Agent]
-    ancient_knowledge --> lifestyle_agent[Lifestyle Agent]
+    ancient_knowledge --> allopathy_specialist[Allopathy Specialist]
+    ancient_knowledge --> ayurveda_specialist[Ayurveda Specialist]
+    ancient_knowledge --> tcm_kampo_specialist[TCM/Kampo Specialist]
+    ancient_knowledge --> lifestyle_specialist[Lifestyle Specialist]
 
     %% Synthesis
-    allopathy_agent --> synthesis_node[Synthesis Node]
-    ayurveda_agent --> synthesis_node
-    tcm_kampo_agent --> synthesis_node
-    lifestyle_agent --> synthesis_node
+    allopathy_specialist --> synthesizer[Synthesizer]
+    ayurveda_specialist --> synthesizer
+    tcm_kampo_specialist --> synthesizer
+    lifestyle_specialist --> synthesizer
 
     %% Safety & adjustments
-    synthesis_node --> contraindication_check{Contraindication Check}
-    contraindication_check -->|No contraindication found| response_generator
-    contraindication_check -->|adjustment_needed| adjustment_node[Adjustment Node]
-    adjustment_node --> response_generator[Response Generator]
+    emergency_medical_agent --> response
+    medical_agent --> response
+    synthesizer --> response
 
     %% Response generation
-    response_generator --> response
     response --> END([END])
 
     %% Styling
@@ -57,7 +57,7 @@ graph TD
     classDef startEndNode fill:#c8e6c9,stroke:#1b5e20,stroke-width:3px
 
     class general_agent,allopathy_agent,ayurveda_agent,tcm_kampo_agent,lifestyle_agent processNode
-    class load_profile,ensure_details,ancient_knowledge_router,ancient_knowledge,synthesis_node,contraindication_check,adjustment_node,response_generator,profile_extractor processNode
+    class load_profile,ensure_details,ancient_knowledge_router,ancient_knowledge,synthesis_node,contraindication_check,adjustment_node,medical_agent processNode
     class input_guardrail,ancient_knowledge_router,ancient_knowledge,contraindication_check decisionNode
     class START,END startEndNode
 ```

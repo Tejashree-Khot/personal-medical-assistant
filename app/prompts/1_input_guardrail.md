@@ -26,3 +26,7 @@ Analyze the user's input and determine:
 
 # Input
 **User message:** {user_input}
+
+# Output
+is_medical: If the query is related to the medical
+is_emergency: If There is medical emergency

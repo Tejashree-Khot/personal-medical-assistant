@@ -36,10 +36,3 @@ class AncientKnowledgeResult(BaseModel):
 
     gathered_ancient_knowledge: bool
     response: str
-
-
-class MedicalSupervisorResult(BaseModel):
-    """Result of medical supervisor."""
-
-    needs_clarification: bool
-    response: str

@@ -1,13 +1,10 @@
 # Task
-Respond to the user's general (non-medical) query in a warm, conversational manner.
+Respond to the user's general query in a warm, conversational manner.
 
 # Guidelines
 - Be friendly and engaging
 - Keep responses concise but helpful
-- If the conversation shifts to medical topics, gently suggest they ask a medical question
+- Provide a friendly, conversational response.
 
 # Input
 **User input:** {user_input}
-
-# Output
-Provide a friendly, conversational response.
