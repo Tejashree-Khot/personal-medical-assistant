@@ -14,8 +14,9 @@ from config.state import SessionState
 
 def get_postgres_connection_string() -> str:
     """Build and return the PostgreSQL connection string from settings."""
-    if settings.POSTGRES_PASSWORD is None:
+    if not settings.POSTGRES_PASSWORD:
         raise ValueError("POSTGRES_PASSWORD is not set")
+
     return (
         f"postgresql://{settings.POSTGRES_USER}:"
         f"{settings.POSTGRES_PASSWORD.get_secret_value()}@"
@@ -24,59 +25,45 @@ def get_postgres_connection_string() -> str:
     )
 
 
-@asynccontextmanager
-async def get_postgres_saver():
-    "Initializes and return a postgreSQL saver instance using connection pool for resilent connection"
-
-    application_name = settings.POSTGRES_APPLICATION_NAME + "-" + "saver"
-
-    async with AsyncConnectionPool(
+def _create_pool(application_name: str) -> AsyncConnectionPool:
+    return AsyncConnectionPool(
         get_postgres_connection_string(),
         min_size=settings.POSTGRES_MIN_CONNECTIONS_PER_POOL,
         max_size=settings.POSTGRES_MAX_CONNECTIONS_PER_POOL,
         kwargs={"autocommit": True, "row_factory": dict_row, "application_name": application_name},
         check=AsyncConnectionPool.check_connection,
-    ) as pool:
-        try:
-            async with pool.connection() as conn:
-                # Create the chat_history table if it doesn't exist
-                # await conn.execute(create_chat_history_table_command())
+    )
 
-                checkpointer = AsyncPostgresSaver(conn)  # type: ignore
-                await checkpointer.setup()
-                yield checkpointer
 
-        finally:
-            await pool.close()
+@asynccontextmanager
+async def get_postgres_saver():
+    """Initialize and yield a PostgreSQL saver using a connection pool."""
+    pool = _create_pool(f"{settings.POSTGRES_APPLICATION_NAME}-saver")
+    async with pool:
+        async with pool.connection() as conn:
+            saver = AsyncPostgresSaver(conn)  # type: ignore
+            await saver.setup()
+            yield saver
 
 
 @asynccontextmanager
 async def get_postgres_store():
-    "Initializes and return a postgreSQL store instance using connection pool for resilent connection"
-
-    application_name = settings.POSTGRES_APPLICATION_NAME + "-" + "store"
-
-    async with AsyncConnectionPool(
-        get_postgres_connection_string(),
-        min_size=settings.POSTGRES_MIN_CONNECTIONS_PER_POOL,
-        max_size=settings.POSTGRES_MAX_CONNECTIONS_PER_POOL,
-        kwargs={"autocommit": True, "row_factory": dict_row, "application_name": application_name},
-        check=AsyncConnectionPool.check_connection,
-    ) as pool:
-        try:
-            async with pool.connection() as conn:
-                store = AsyncPostgresStore(conn)  # type: ignore
-                await store.setup()
-                yield store
-
-        finally:
-            await pool.close()
+    """Initialize and yield a PostgreSQL store using a connection pool."""
+    pool = _create_pool(f"{settings.POSTGRES_APPLICATION_NAME}-store")
+    async with pool:
+        async with pool.connection() as conn:
+            store = AsyncPostgresStore(conn)  # type: ignore
+            await store.setup()
+            yield store
 
 
 async def save_message(conn, session_id: str, role: str, content: str):
     """Save a message to the chat_history table."""
     await conn.execute(
-        """ INSERT INTO chat_history (session_id, role, content, timestap) VALUES ($1, $2, $3, $4, $5)""",
+        """
+        INSERT INTO chat_history (session_id, role, content, timestamp)
+        VALUES ($1, $2, $3, $4)
+        """,
         session_id,
         role,
         content,
@@ -87,29 +74,19 @@ async def save_message(conn, session_id: str, role: str, content: str):
 class PostgresClient:
     def __init__(self):
         self.connection_string = get_postgres_connection_string()
-        self.pool = None
+        self.pool: AsyncConnectionPool | None = None
 
     async def ensure_pool(self):
-        if self.pool is None:
-            self.pool = AsyncConnectionPool(
-                self.connection_string,
-                min_size=settings.POSTGRES_MIN_CONNECTIONS_PER_POOL,
-                max_size=settings.POSTGRES_MAX_CONNECTIONS_PER_POOL,
-                kwargs={
-                    "autocommit": True,
-                    "row_factory": dict_row,
-                    "application_name": settings.POSTGRES_APPLICATION_NAME,
-                },
-                check=AsyncConnectionPool.check_connection,
-                open=False,
-            )
+        if not self.pool:
+            self.pool = _create_pool(settings.POSTGRES_APPLICATION_NAME)
             await self.pool.open()
 
     async def create_tables(self):
         """Create necessary tables in PostgreSQL."""
         await self.ensure_pool()
         async with self.pool.connection() as conn:
-            await conn.execute("""
+            await conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS session_state (
                     session_id TEXT PRIMARY KEY,
                     user_id TEXT,
@@ -128,9 +105,11 @@ class PostgresClient:
                     user_profile JSONB,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
-            """)
+                """
+            )
 
-            await conn.execute("""
+            await conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS user_profile (
                     user_id TEXT PRIMARY KEY,
                     name TEXT,
@@ -146,12 +125,8 @@ class PostgresClient:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
-            """)
-
-            await conn.execute("""
-                ALTER TABLE user_profile 
-                ADD COLUMN IF NOT EXISTS name TEXT;
-            """)
+                """
+            )
 
     async def add_state(self, state: SessionState):
         await self.ensure_pool()
@@ -159,38 +134,17 @@ class PostgresClient:
             await conn.execute(
                 """
                 INSERT INTO session_state (
-                    session_id, 
-                    user_id, 
-                    user_input, 
-                    allopathy_response, 
-                    ayurveda_response, 
-                    conversation_history,
-                    gathered_ancient_knowledge,
-                    has_sufficient_details,
-                    is_emergency,
-                    is_medical,
-                    lifestyle_response,
-                    response,
-                    safety_warnings,
-                    tcm_response,
-                    user_profile
+                    session_id, user_id, user_input, allopathy_response, ayurveda_response,
+                    conversation_history, gathered_ancient_knowledge, has_sufficient_details,
+                    is_emergency, is_medical, lifestyle_response, response, safety_warnings,
+                    tcm_response, user_profile
                 )
                 VALUES (
-                    %(session_id)s, 
-                    %(user_id)s, 
-                    %(user_input)s, 
-                    %(allopathy_response)s, 
-                    %(ayurveda_response)s, 
-                    %(conversation_history)s, 
-                    %(gathered_ancient_knowledge)s, 
-                    %(has_sufficient_details)s, 
-                    %(is_emergency)s, 
-                    %(is_medical)s, 
-                    %(lifestyle_response)s, 
-                    %(response)s, 
-                    %(safety_warnings)s, 
-                    %(tcm_response)s, 
-                    %(user_profile)s
+                    %(session_id)s, %(user_id)s, %(user_input)s, %(allopathy_response)s,
+                    %(ayurveda_response)s, %(conversation_history)s,
+                    %(gathered_ancient_knowledge)s, %(has_sufficient_details)s,
+                    %(is_emergency)s, %(is_medical)s, %(lifestyle_response)s,
+                    %(response)s, %(safety_warnings)s, %(tcm_response)s, %(user_profile)s
                 )
                 ON CONFLICT (session_id) DO UPDATE SET
                     user_id = EXCLUDED.user_id,
@@ -239,9 +193,7 @@ class PostgresClient:
                     {"session_id": session_id},
                 )
                 row = await cur.fetchone()
-                if row:
-                    return SessionState(**row)
-        return None
+                return SessionState(**row) if row else None
 
     async def save_user_profile(self, user_profile: UserProfile):
         await self.ensure_pool()
@@ -249,12 +201,13 @@ class PostgresClient:
             await conn.execute(
                 """
                 INSERT INTO user_profile (
-                    user_id, name, allergies, ayurveda, biometrics, demographics, diet, 
+                    user_id, name, allergies, ayurveda, biometrics, demographics, diet,
                     health_goals, lifestyle, medical_history, other, updated_at
                 )
                 VALUES (
-                    %(user_id)s, %(name)s, %(allergies)s, %(ayurveda)s::jsonb, %(biometrics)s::jsonb, 
-                    %(demographics)s::jsonb, %(diet)s::jsonb, %(health_goals)s::jsonb, %(lifestyle)s::jsonb, 
+                    %(user_id)s, %(name)s, %(allergies)s, %(ayurveda)s::jsonb,
+                    %(biometrics)s::jsonb, %(demographics)s::jsonb, %(diet)s::jsonb,
+                    %(health_goals)s::jsonb, %(lifestyle)s::jsonb,
                     %(medical_history)s::jsonb, %(other)s, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT (user_id) DO UPDATE SET
@@ -305,9 +258,7 @@ class PostgresClient:
                     "SELECT * FROM user_profile WHERE user_id = %(user_id)s", {"user_id": user_id}
                 )
                 row = await cur.fetchone()
-                if row:
-                    return UserProfile(**row)
-        return None
+                return UserProfile(**row) if row else None
 
     async def close(self):
         if self.pool:
