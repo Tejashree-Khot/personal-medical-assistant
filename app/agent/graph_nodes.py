@@ -109,7 +109,7 @@ class AgentNode(BaseNode):
 class InputGuardrailNode(AgentNode):
     """Analyzes input for safety and emergency signals."""
 
-    prompt = load_prompt("1_input_guardrail.md")
+    prompt = load_prompt("input_guardrail.md")
     output_schema = GuardrailResult
 
     async def run(self, state: SessionState) -> SessionState:
@@ -123,7 +123,7 @@ class InputGuardrailNode(AgentNode):
 class EmergencyMedicalAgentNode(AgentNode):
     """Handles emergency queries."""
 
-    prompt = load_prompt("2_emergency_medical_agent.md")
+    prompt = load_prompt("emergency_medical_agent.md")
     output_schema = AgentResponse
 
     async def run(self, state: SessionState) -> SessionState:
@@ -135,7 +135,7 @@ class EmergencyMedicalAgentNode(AgentNode):
 class GeneralAgentNode(AgentNode):
     """Handles casual/general queries."""
 
-    prompt = load_prompt("2_general_agent.md")
+    prompt = load_prompt("general_agent.md")
     output_schema = AgentResponse
 
     async def run(self, state: SessionState) -> SessionState:
@@ -147,7 +147,7 @@ class GeneralAgentNode(AgentNode):
 class MedicalAgentNode(AgentNode):
     """Handles medical queries."""
 
-    prompt = load_prompt("3_medical_agent.md")
+    prompt = load_prompt("medical_agent.md")
     output_schema = AgentResponse
 
     async def run(self, state: SessionState) -> SessionState:
@@ -159,7 +159,7 @@ class MedicalAgentNode(AgentNode):
 class EnsureDetailsNode(AgentNode):
     """Ensures user provides sufficient details."""
 
-    prompt = load_prompt("3_ensure_details.md")
+    prompt = load_prompt("ensure_details.md")
     output_schema = EnsureDetailsResult
 
     async def run(self, state: SessionState) -> SessionState:
@@ -187,7 +187,7 @@ class SpecialistAgentNode(AgentNode):
     def __init__(self, model: LLMClient, agent_name: str) -> None:
         super().__init__(model)
         self.agent_name = agent_name
-        self.prompt = load_prompt(f"4_{agent_name}.md")
+        self.prompt = load_prompt(f"{agent_name}.md")
         self.response_field = self.AGENT_RESPONSE_FIELDS.get(agent_name, "response")
 
     async def run(self, state: SessionState) -> SessionState:
@@ -205,7 +205,7 @@ class SpecialistAgentNode(AgentNode):
 class SynthesisAndSafetyNode(AgentNode):
     """Synthesizes specialist outputs and ensures safety."""
 
-    prompt = load_prompt("5_synthesis_and_safety.md")
+    prompt = load_prompt("synthesis_and_safety.md")
     output_schema = AgentResponse
 
     async def run(self, state: SessionState) -> SessionState:
