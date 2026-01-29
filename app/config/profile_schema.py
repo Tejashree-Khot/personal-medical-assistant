@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class Allergies(BaseModel):
     """Allergies profile information."""
 
-    allergies: list[str] | None = None
+    allergy_list: list[str] | None = None
 
 
 class Ayurveda(BaseModel):
