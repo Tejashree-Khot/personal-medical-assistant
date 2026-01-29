@@ -18,21 +18,15 @@ class GuardrailResult(BaseModel):
     is_medical: bool
 
 
-class AgentResponse(BaseModel):
-    """Unified response schema for all text-based agent nodes."""
-
-    response: str
-
-
 class EnsureDetailsResult(BaseModel):
     """Result of ensure details."""
 
     has_sufficient_details: bool
     response: str
+    requested_details: str
 
 
-class AncientKnowledgeResult(BaseModel):
-    """Result of ancient knowledge."""
+class AgentResponse(BaseModel):
+    """Standard response schema for agent nodes."""
 
-    gathered_ancient_knowledge: bool
     response: str

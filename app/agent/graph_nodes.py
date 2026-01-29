@@ -7,7 +7,7 @@ from typing import Any
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel
 
-from config.node_schemas import AgentResponse, EnsureDetailsResult, GuardrailResult
+from config.node_schemas import EnsureDetailsResult, GuardrailResult
 from config.state import SessionState
 from core.llm import LLMClient
 from utils.helper import load_prompt
@@ -19,8 +19,8 @@ LOGGER.setLevel(logging.INFO)
 
 
 class BaseNode(ABC):
-    async def run(self, state: SessionState) -> SessionState:
-        return state
+    async def run(self, state: SessionState) -> dict[str, Any]:
+        return {}
 
 
 class AncientKnowledgeRouterNode(BaseNode):
@@ -68,11 +68,9 @@ class AgentNode(BaseNode):
         """Prepare ChatPromptTemplate with escaped braces."""
         system_prompt = self.escape_braces(self.prepare_system_prompt(state))
         current_prompt = self.escape_braces(current_prompt)
-        escaped_history = [
-            (msg["role"], self.escape_braces(msg["content"])) for msg in state.conversation_history
-        ]
+        history = [(msg["role"], msg["content"]) for msg in state.conversation_history]
         return ChatPromptTemplate.from_messages(
-            [("system", system_prompt), *escaped_history, ("user", current_prompt)]
+            [("system", system_prompt), *history, ("user", current_prompt)]
         )
 
     def update_conversation_history(
@@ -90,10 +88,10 @@ class AgentNode(BaseNode):
         *,
         prompt_kwargs: dict[str, Any],
         response_field: str | None = None,
-    ) -> SessionState:
-        """Invoke LLM with structured output schema and apply updates to state."""
+    ) -> dict[str, Any]:
+        """Invoke LLM with structured output schema and return only modified fields."""
         if not self.prompt or not self.output_schema:
-            return state
+            return {}
         prompt_text = self.prompt.format(**prompt_kwargs)
         prompt = self.prepare_prompt(state, prompt_text)
         chain = prompt | self.structured_llm
@@ -101,9 +99,35 @@ class AgentNode(BaseNode):
         updates = response.model_dump(exclude_none=True)
         if response_field and "response" in updates:
             updates[response_field] = updates.pop("response")
+            if "requested_details" in updates:
+                updates["response"] += "\n\n ## Requested details: " + updates.pop(
+                    "requested_details"
+                )
+        if response_field and "requested_details" in updates:
+            updates[response_field] = updates.pop("requested_details")
+
         state.apply_updates(updates)
         self.update_conversation_history(state, state.user_input, updates)
-        return state
+        return updates
+
+    async def run_text_node(
+        self,
+        state: SessionState,
+        *,
+        prompt_kwargs: dict[str, Any],
+        response_field: str = "response",
+    ) -> dict[str, Any]:
+        """Invoke LLM and return raw text response in specified field."""
+        if not self.prompt:
+            return {}
+        prompt_text = self.prompt.format(**prompt_kwargs)
+        prompt = self.prepare_prompt(state, prompt_text)
+        chain = prompt | self.model
+        response = await chain.ainvoke(prompt_kwargs)
+        updates = {response_field: response.content}
+        state.apply_updates(updates)
+        self.update_conversation_history(state, state.user_input, {"response": response.content})
+        return updates
 
 
 class InputGuardrailNode(AgentNode):
@@ -112,11 +136,11 @@ class InputGuardrailNode(AgentNode):
     prompt = load_prompt("input_guardrail.md")
     output_schema = GuardrailResult
 
-    async def run(self, state: SessionState) -> SessionState:
+    async def run(self, state: SessionState) -> dict[str, Any]:
         """Analyzes input for safety and emergency signals."""
         LOGGER.info("InputGuardrailNode: Analyzing input for safety and emergency signals")
         if state.is_emergency or state.is_medical:
-            return state
+            return {}
         return await self.run_structured_node(state, prompt_kwargs={"user_input": state.user_input})
 
 
@@ -124,36 +148,33 @@ class EmergencyMedicalAgentNode(AgentNode):
     """Handles emergency queries."""
 
     prompt = load_prompt("emergency_medical_agent.md")
-    output_schema = AgentResponse
 
-    async def run(self, state: SessionState) -> SessionState:
+    async def run(self, state: SessionState) -> dict[str, Any]:
         """Handles emergency queries."""
         LOGGER.info("EmergencyResponseNode: Handling emergency queries")
-        return await self.run_structured_node(state, prompt_kwargs={"user_input": state.user_input})
+        return await self.run_text_node(state, prompt_kwargs={"user_input": state.user_input})
 
 
 class GeneralAgentNode(AgentNode):
     """Handles casual/general queries."""
 
     prompt = load_prompt("general_agent.md")
-    output_schema = AgentResponse
 
-    async def run(self, state: SessionState) -> SessionState:
+    async def run(self, state: SessionState) -> dict[str, Any]:
         """Handles casual/general queries."""
         LOGGER.info("GeneralAgentNode: Handling casual/general queries")
-        return await self.run_structured_node(state, prompt_kwargs={"user_input": state.user_input})
+        return await self.run_text_node(state, prompt_kwargs={"user_input": state.user_input})
 
 
 class MedicalAgentNode(AgentNode):
     """Handles medical queries."""
 
     prompt = load_prompt("medical_agent.md")
-    output_schema = AgentResponse
 
-    async def run(self, state: SessionState) -> SessionState:
+    async def run(self, state: SessionState) -> dict[str, Any]:
         """Handles medical queries."""
         LOGGER.info("MedicalAgentNode: Handling medical queries")
-        return await self.run_structured_node(state, prompt_kwargs={"user_input": state.user_input})
+        return await self.run_text_node(state, prompt_kwargs={"user_input": state.user_input})
 
 
 class EnsureDetailsNode(AgentNode):
@@ -162,7 +183,7 @@ class EnsureDetailsNode(AgentNode):
     prompt = load_prompt("ensure_details.md")
     output_schema = EnsureDetailsResult
 
-    async def run(self, state: SessionState) -> SessionState:
+    async def run(self, state: SessionState) -> dict[str, Any]:
         """Ensures user provides sufficient details."""
         LOGGER.info("EnsureDetailsNode: Ensuring user provides sufficient details")
         prompt_kwargs = {
@@ -174,8 +195,6 @@ class EnsureDetailsNode(AgentNode):
 
 class SpecialistAgentNode(AgentNode):
     """Generic specialist node that stores response in a configurable state attribute."""
-
-    output_schema = AgentResponse
 
     AGENT_RESPONSE_FIELDS = {
         "allopathy_agent": "allopathy_response",
@@ -190,14 +209,14 @@ class SpecialistAgentNode(AgentNode):
         self.prompt = load_prompt(f"{agent_name}.md")
         self.response_field = self.AGENT_RESPONSE_FIELDS.get(agent_name, "response")
 
-    async def run(self, state: SessionState) -> SessionState:
+    async def run(self, state: SessionState) -> dict[str, Any]:
         """Runs specialist agent and stores response in the appropriate field."""
         LOGGER.info("SpecialistAgentNode: Running specialist agent %s", self.agent_name)
         prompt_kwargs = {
             "user_input": state.user_input,
             "user_profile": self.get_safe_user_profile(state),
         }
-        return await self.run_structured_node(
+        return await self.run_text_node(
             state, prompt_kwargs=prompt_kwargs, response_field=self.response_field
         )
 
@@ -206,9 +225,8 @@ class SynthesisAndSafetyNode(AgentNode):
     """Synthesizes specialist outputs and ensures safety."""
 
     prompt = load_prompt("synthesis_and_safety.md")
-    output_schema = AgentResponse
 
-    async def run(self, state: SessionState) -> SessionState:
+    async def run(self, state: SessionState) -> dict[str, Any]:
         """Combines specialist outputs, checks safety, and adjusts if needed."""
         LOGGER.info("SynthesisAndSafetyNode: Synthesizing outputs and checking safety")
         prompt_kwargs = {
@@ -219,7 +237,7 @@ class SynthesisAndSafetyNode(AgentNode):
             "lifestyle_response": state.lifestyle_response or "",
             "user_profile": self.get_safe_user_profile(state),
         }
-        return await self.run_structured_node(state, prompt_kwargs=prompt_kwargs)
+        return await self.run_text_node(state, prompt_kwargs=prompt_kwargs)
 
 
 class ResponseNode(BaseNode):

@@ -1,6 +1,12 @@
+import json
+from typing import Type, TypeVar
+
 from langchain_groq import ChatGroq
+from pydantic import BaseModel
 
 from config.settings import settings
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class LLMClient:
@@ -10,13 +16,34 @@ class LLMClient:
         )
 
     async def ainvoke(self, messages: list[dict[str, str]]) -> str:
-        """Invoke the LLM with messages.
+        """Invoke the LLM with messages."""
+        return await self.model.ainvoke(messages)
 
-        Args:
-            messages: Either a string prompt or a list of message dicts
+    async def ainvoke_structured(
+        self, system_prompt: str, user_prompt: str, response_model: Type[T]
+    ) -> T:
+        """Invoke the LLM with messages and return a structured response."""
+        schema = response_model.model_json_schema()
 
-        Returns:
-            The response content as a string
-        """
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    f"{system_prompt}\n\n"
+                    "You MUST return valid JSON only.\n"
+                    "Do not add explanations or extra text.\n\n"
+                    f"JSON Schema:\n{json.dumps(schema, indent=2)}"
+                ),
+            },
+            {"role": "user", "content": user_prompt},
+        ]
+
         response = await self.model.ainvoke(messages)
-        return response.content
+
+        try:
+            parsed = json.loads(response.content)
+            return response_model.model_validate(parsed)
+        except Exception as e:
+            raise ValueError(
+                f"Invalid structured response from LLM.\nRaw output:\n{response.content}"
+            ) from e

@@ -3,8 +3,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-from langgraph.types import Send
-
 if TYPE_CHECKING:
     pass
 
@@ -62,15 +60,15 @@ class ConditionalEdges:
             return "response"
 
     @staticmethod
-    def route_ancient_knowledge_router(state: SessionState) -> str | list[Send]:
+    def route_ancient_knowledge_router(state: SessionState) -> str:
         """Route based on ancient knowledge router decision.
 
         If needs ancient knowledge, go to ancient_knowledge.
         Otherwise, go to response.
         """
-        if state.gathered_ancient_knowledge:
-            LOGGER.info("Route ancient knowledge router: ancient knowledge gathered")
+        if not state.gathered_ancient_knowledge:
+            LOGGER.info("Route ancient knowledge router: ancient knowledge not gathered")
             return "ancient_knowledge"
         else:
-            LOGGER.info("Route ancient knowledge router: ancient knowledge not gathered")
+            LOGGER.info("Route ancient knowledge router: ancient knowledge gathered")
             return "medical_agent"

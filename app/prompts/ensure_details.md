@@ -1,23 +1,19 @@
-# Instructions
-Check if user has provided sufficient details.
+# User Input
 
-# Input
-**User input:** {user_input}
+{user_input}
 
-**User profile:** {user_profile}
+## User Profile Context
 
-# Evaluation Criteria
-Consider if you need to ask for clarification:
-- Age, gender, or other demographic information
-- Current medications or supplements
-- Existing medical conditions
-- Allergies
-- Duration or severity of symptoms
-- Specific context about their situation
-- Ask for clarification only once.
-- If user explicitly states that they do not want to provide additional information, do not ask for more.
-- Don't be too aggressive in asking for clarification. Only ask if necessary.
+{user_profile}
 
-# Guidelines
-- If user has provided sufficient details, set has_sufficient_details to true and response to empty string.
-- If user has not provided sufficient details, set has_sufficient_details to false and response to a message asking for more details.
+set has_sufficient_details even if details are not provided
+
+## Output Format(strict JSON)
+
+```json
+{{
+  "has_sufficient_details": "bool true or false. Based on user profile and medical issue analyse the neccessity of the details",
+  "response": "**well-structured markdown medical response** with headings, bullet points, and clear sections.",
+  "requested_details": "Request missing details in anothe section for personlized solution."
+}}
+```

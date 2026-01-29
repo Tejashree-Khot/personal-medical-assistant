@@ -96,6 +96,7 @@ class PostgresClient:
                     conversation_history JSONB,
                     gathered_ancient_knowledge BOOLEAN,
                     has_sufficient_details BOOLEAN,
+                    requested_details TEXT,
                     is_emergency BOOLEAN,
                     is_medical BOOLEAN,
                     lifestyle_response TEXT,
@@ -136,13 +137,13 @@ class PostgresClient:
                 INSERT INTO session_state (
                     session_id, user_id, user_input, allopathy_response, ayurveda_response,
                     conversation_history, gathered_ancient_knowledge, has_sufficient_details,
-                    is_emergency, is_medical, lifestyle_response, response, safety_warnings,
-                    tcm_response, user_profile
+                    requested_details, is_emergency, is_medical, lifestyle_response, response, 
+                    safety_warnings, tcm_response, user_profile
                 )
                 VALUES (
                     %(session_id)s, %(user_id)s, %(user_input)s, %(allopathy_response)s,
                     %(ayurveda_response)s, %(conversation_history)s,
-                    %(gathered_ancient_knowledge)s, %(has_sufficient_details)s,
+                    %(gathered_ancient_knowledge)s, %(has_sufficient_details)s,%(requested_details)s,
                     %(is_emergency)s, %(is_medical)s, %(lifestyle_response)s,
                     %(response)s, %(safety_warnings)s, %(tcm_response)s, %(user_profile)s
                 )
@@ -154,6 +155,7 @@ class PostgresClient:
                     conversation_history = EXCLUDED.conversation_history,
                     gathered_ancient_knowledge = EXCLUDED.gathered_ancient_knowledge,
                     has_sufficient_details = EXCLUDED.has_sufficient_details,
+                    requested_details = EXCLUDED.requested_details,
                     is_emergency = EXCLUDED.is_emergency,
                     is_medical = EXCLUDED.is_medical,
                     lifestyle_response = EXCLUDED.lifestyle_response,
@@ -172,6 +174,7 @@ class PostgresClient:
                     "conversation_history": json.dumps(state.conversation_history),
                     "gathered_ancient_knowledge": state.gathered_ancient_knowledge,
                     "has_sufficient_details": state.has_sufficient_details,
+                    "requested_details": state.requested_details,
                     "is_emergency": state.is_emergency,
                     "is_medical": state.is_medical,
                     "lifestyle_response": state.lifestyle_response,

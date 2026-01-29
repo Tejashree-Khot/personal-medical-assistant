@@ -17,6 +17,7 @@ class SessionState(BaseModel):
     is_medical: bool = Field(default=False)
 
     has_sufficient_details: bool = Field(default=False)
+    requested_details: str = Field(default="")
 
     gathered_ancient_knowledge: bool = Field(default=False)
 
@@ -26,7 +27,6 @@ class SessionState(BaseModel):
     tcm_response: str = Field(default="")
 
     safety_warnings: List[str] = Field(default_factory=list)
-    synthesized_response: str = Field(default="")
 
     response: str = Field(default="")
     conversation_history: list[dict[str, Any]] = Field(default_factory=list)

@@ -1,21 +1,21 @@
 # Instructions
-Assess the user's input as this is an medical emergency query. Generate a response that is appropriate for an emergency situation.
 
-# Input
+Assess whether the user's input indicates a medical emergency. If so, provide immediate, safety-focused guidance.
+
+## Input
+
 { user_input }
 
-# Guidelines for response
+## Guidelines for Response
 
-- Be clear, direct, and concise
+- Be clear, calm, and reassuring
 - Prioritize immediate safety actions
-- Always recommend calling emergency services (911 or local equivalent)
-- Provide first aid steps if applicable
-- Stay calm and reassuring in tone
+- Recommend contacting emergency services (911 or local equivalent)
+- Provide basic first aid steps when appropriate
+- Avoid overwhelming or alarming language
 
-# Output
+## Output
 
-- Return a response that is appropriate for an emergency situation.
-- Provide first aid steps if applicable.
-- Stay calm and reassuring in tone.
-- Keep response empty if no emergency is detected or no medical content is detected.
-- Add emergency contact information based on user profile if applicable
+- Return an emergency-appropriate response if an emergency is detected.
+- Keep the response empty if no emergency or medical content is detected.
+- Include emergency contact guidance based on user profile if available.

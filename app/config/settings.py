@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     GROQ_API_KEY: SecretStr = SecretStr("groq_api_key")
-    LLM_MODEL_NAME: str = Field(default="llama-3.3-70b-versatile")
+    LLM_MODEL_NAME: str = Field(default="llama-3.1-8b-instant")
 
     POSTGRES_USER: str | None = Field(default="postgres")
     POSTGRES_PASSWORD: SecretStr = SecretStr("postgres")
