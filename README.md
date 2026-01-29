@@ -19,7 +19,7 @@ It ensures **safety and relevance** through input guardrails, contraindication c
 1. Clone the repository:
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Tejashree-Khot/personal-medical-assistant.git
    cd personal-medical-assistant
    ```
 
