@@ -83,11 +83,7 @@ class AgentNode(BaseNode):
         state.conversation_history.append({"role": "assistant", "content": response["response"]})
 
     async def run_structured_node(
-        self,
-        state: SessionState,
-        *,
-        prompt_kwargs: dict[str, Any],
-        response_field: str | None = None,
+        self, state: SessionState, *, prompt_kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """Invoke LLM with structured output schema and return only modified fields."""
         if not self.prompt or not self.output_schema:
@@ -97,14 +93,6 @@ class AgentNode(BaseNode):
         chain = prompt | self.structured_llm
         response: BaseModel = await chain.ainvoke(prompt_kwargs)
         updates = response.model_dump(exclude_none=True)
-        if response_field and "response" in updates:
-            updates[response_field] = updates.pop("response")
-            if "requested_details" in updates:
-                updates["response"] += "\n\n ## Requested details: " + updates.pop(
-                    "requested_details"
-                )
-        if response_field and "requested_details" in updates:
-            updates[response_field] = updates.pop("requested_details")
 
         state.apply_updates(updates)
         self.update_conversation_history(state, state.user_input, updates)
