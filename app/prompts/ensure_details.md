@@ -10,10 +10,20 @@ set has_sufficient_details even if details are not provided
 
 ## Output Format(strict JSON)
 
+Return ONLY a JSON object. No prose, no explanations.
+
 ```json
 {{
-  "has_sufficient_details": "bool true or false. Based on user profile and medical issue analyse the neccessity of the details",
-  "response": "**well-structured markdown medical response** with headings, bullet points, and clear sections.",
-  "requested_details": "Request missing details in anothe section for personlized solution."
+  "has_sufficient_details": [LITERAL_BOOLEAN],
+  "response": "markdown_string",
+  "requested_details": "markdown_string"
 }}
 ```
+
+Rules:
+1. "has_sufficient_details" must be a JSON boolean literal (true or false).
+2. DO NOT use quotes like "true" or "false".
+3. If details are missing, set "has_sufficient_details" to false.
+
+Example of valid boolean: "has_sufficient_details": true
+Example of INVALID string: "has_sufficient_details": "true"
