@@ -8,6 +8,8 @@ Analyze the conversation to extract any new health information that should be ad
 - Update only what has changed or is new
 - Return only the fields that need to be updated or added
 
+
+
 # Input
 User input: {user_input}
 Current profile: {user_profile}

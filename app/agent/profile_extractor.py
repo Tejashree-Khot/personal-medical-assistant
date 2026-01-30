@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from langchain_core.prompts import ChatPromptTemplate
+from pydantic import ValidationError
 
 from config.profile_schema import ProfileUpdate, UserProfile
 from core.llm import LLMClient
@@ -82,6 +83,7 @@ class ProfileExtractor:
         """Updates persistent user profile."""
         LOGGER.info("Loading user profile from Postgres for user_id=%s", user_id)
         user_profile = await self.load_user_profile(user_id) or UserProfile(user_id=user_id)
+
         LOGGER.info("Loaded user profile from Postgres for user_id=%s", user_id)
         try:
             LOGGER.info("Running profile extraction for user_id=%s", user_id)
@@ -90,6 +92,8 @@ class ProfileExtractor:
 
             if updates:
                 await self.save_user_profile(UserProfile(user_id=user_id, **updates))
+            else:
+                LOGGER.info("No updates to save for user_id=%s", user_id)
 
             LOGGER.info("Profile extraction completed for user_id=%s", user_id)
         except Exception:
