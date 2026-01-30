@@ -41,7 +41,25 @@ Return **strictly** in the following JSON format. Do not add any other text.
 
 ```json
 {{
-  "is_emergency": bool,
-  "is_medical": bool
+  "is_emergency": true or false,
+  "is_medical": true or false
 }}
 ```
+CRITICAL FORMATTING INSTRUCTION:
+Use boolean values only. Do not use strings.
+Do not add explanations.
+Do NOT wrap the values in quotes.
+
+CORRECT Example:
+```json
+{{
+  "is_emergency": true,
+  "is_medical": false
+}}
+```
+INCORRECT Example (Do not do this):
+```json
+{{
+  "is_emergency": "true",
+  "is_medical": "false"
+}}```
