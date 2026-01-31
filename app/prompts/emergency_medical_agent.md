@@ -4,7 +4,7 @@ Assess whether the user's input indicates a medical emergency. If so, provide im
 
 ## Input
 
-{ user_input }
+{user_input}
 
 ## Guidelines for Response
 
