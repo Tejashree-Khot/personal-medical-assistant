@@ -28,8 +28,11 @@ Rules:
 - User explicitly declines to provide more info (e.g., "no", "skip").
 
 3. Set to false if:
+- Populate the "response" field with exactly one concise clarifying question.
 
-- Essential info is missing. Action: Ask a concise follow-up question
+- Forbidden: Do not include any other text, advice, or bullet points within the JSON fields.
+
+- Leave "requested_details" as an empty string.
 
 4. Strict Adherence: If the user declines to share info, you must stop requesting it immediately. Do not explain why the info is needed or try to build trust. Simply set has_sufficient_details to true
 
