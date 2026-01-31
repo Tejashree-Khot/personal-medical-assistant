@@ -6,8 +6,6 @@
 
 {user_profile}
 
-set has_sufficient_details even if details are not provided
-
 ## Output Format(strict JSON)
 
 Return ONLY a JSON object. No prose, no explanations.
