@@ -26,7 +26,7 @@ class AgentClient:
     def __init__(self, config: Config):
         self.config = config
 
-    def send_query(self, query: str) -> str:
+    def send_query(self, query: str) -> dict:
         """Sends a query to the Agent/Orchestrator API and returns the response."""
         payload = {
             "session_id": st.session_state["session_id"],
