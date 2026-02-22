@@ -5,7 +5,6 @@ import logging
 from typing import Any
 
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import ValidationError
 
 from config.profile_schema import ProfileUpdate, UserProfile
 from core.llm import LLMClient
