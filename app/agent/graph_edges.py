@@ -19,17 +19,15 @@ class ConditionalEdges:
 
     @staticmethod
     def route_input_guardrail(state: SessionState) -> str:
-        """Route based on medical agent check.
-
-        If medical query, go to medical_router.
-        Otherwise, go to general_agent.
-        """
+        """Route based on input guardrail LLM classification."""
+        if not state.has_sufficient_details and state.conversation_history:
+            LOGGER.info("Route input guardrail: follow-up to medical query (awaiting details)")
+            return "medical_router"
         if state.is_medical:
             LOGGER.info("Route input guardrail: medical query")
             return "medical_router"
-        else:
-            LOGGER.info("Route input guardrail: general query")
-            return "general_agent"
+        LOGGER.info("Route input guardrail: general query")
+        return "general_agent"
 
     @staticmethod
     def route_medical_query(state: SessionState) -> str:
