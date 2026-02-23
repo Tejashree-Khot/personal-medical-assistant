@@ -127,8 +127,6 @@ class InputGuardrailNode(AgentNode):
     async def run(self, state: SessionState) -> dict[str, Any]:
         """Analyzes input for safety and emergency signals."""
         LOGGER.info("InputGuardrailNode: Analyzing input for safety and emergency signals")
-        if state.is_emergency or state.is_medical:
-            return {}
         return await self.run_structured_node(state, prompt_kwargs={"user_input": state.user_input})
 
 
